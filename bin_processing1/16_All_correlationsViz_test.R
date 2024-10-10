@@ -10,9 +10,15 @@ library(corrplot)
 library(ggplot2)
 library(dplyr)
 ##############################################################################
-remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/")
 
+# ------------------------------------------------------
+remove(list=ls())
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# ------------------------------------------------------
 # load data #
 d1<-read_csv("./results_test/14_IndpVar_Pts_test.csv")%>%
   glimpse()

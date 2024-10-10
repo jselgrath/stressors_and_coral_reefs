@@ -20,7 +20,10 @@ library(sf)
 # OBJECTIVE 1: Load and organize files 
 # -------------------------------------------
 remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
 ############################
 # TASK 1.1 Load point files
@@ -40,14 +43,18 @@ v1<-st_read("./gis/0most_shp/depth/depth_splinelandshallow_20160726_dis.shp")%>%
   glimpse()
 
 
-v1p <- pt%>%
+v1p_s <- pt%>%
   st_join(v1)%>%
   arrange(PtID2)%>%
   glimpse()
 
+# check depth representation
+min(v1p_s$Depth_m, na.rm=T)
+
 
 # convert to data frame
-v1p<- as.data.frame(v1p)%>%
+v1p<- as.data.frame(v1p_s)%>%
+  filter(Depth_m>=-15)%>%   # remove 9 points deeper than -15m
   glimpse()
 
 
@@ -117,37 +124,6 @@ v5p_a <- pt%>%
 v5p<- as.data.frame(v5p_a)%>%
   glimpse
 
-
-#Distance to mangroves - buffer distances. using 100m instead. see landscape file
-# ogrInfo(".","mangrove_buf_FA2_20160525");  
-# v7<-st_read("./gis/0most_shp/mangrove_buffer/mangrove_buf_FA2_20160525.shp")%>%
-  # glimpse()
-
-# extract polygon data to points
-# v7p_a <- pt%>%
-#   st_join(v7)%>%
-#   glimpse()
-# 
-# # convert to data frame
-# v7p<- as.data.frame(v7p_a)%>%
-#   dplyr::select(PtID2,Id_dMg,distMg=distance,geom)%>%
-#   glimpse()
-
-#Distance to seagrass areas - see mangrove. use landsdcape data
-# ogrInfo(".","seagrass_buf_FA2_20160525");
-# v8<-st_read("./gis/0most_shp/seagrass_buffer/seagrass_buf_FA2_20160525.shp")%>%
-#   glimpse()
-# 
-# # extract polygon data to points
-# v8p_a <- pt%>%
-#   st_join(v8)%>%
-#   glimpse()
-# 
-# # convert to data frame
-# v8p<- as.data.frame(v8p_a)%>%
-#   dplyr::select(PtID2,Id_dSg,distSg=distance,geom)%>%
-#   # mutate(distSg=as.numeric(distSg))%>%
-#   glimpse()
 
 # var.names<-c("Depth","EcoZone","LongZone","MPA","MunWater","dRiver", "dMang","dSeagrs")
 

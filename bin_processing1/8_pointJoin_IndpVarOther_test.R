@@ -20,7 +20,10 @@ library(sf)
 # OBJECTIVE 1: Load and organize files 
 # -------------------------------------------
 remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
 ############################
 # TASK 1.1 Load point files
@@ -40,15 +43,21 @@ v1<-st_read("./gis/0most_shp/depth/depth_splinelandshallow_20160726_dis.shp")%>%
   glimpse()
 
 
-v1p <- pt%>%
+
+v1p_s <- pt%>%
   st_join(v1)%>%
   arrange(PtID2)%>%
   glimpse()
 
+# check depth representation
+min(v1p_s$Depth_m, na.rm=T)
+
 
 # convert to data frame
-v1p<- as.data.frame(v1p)%>%
+v1p<- as.data.frame(v1p_s)%>%
+  filter(Depth_m>=-15)%>%   # remove 9 points deeper than -15m
   glimpse()
+
 
 
 #2. Ecol Zones

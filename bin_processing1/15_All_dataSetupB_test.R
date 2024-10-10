@@ -13,9 +13,15 @@ library(lme4)
 library(car) # function Anova - correct checking on models
 library(ggplot2)
 ##########################
-remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/")
 
+# ------------------------------------------------------
+remove(list=ls())
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# ------------------------------------------------------
 # load data 
 d0<-read_csv("./results_test/14_IndpVar_Pts_test.csv")%>%
   mutate(EcoZone2=if_else(EcoZone2=="Terrestrial Island","Coastal",EcoZone2))%>% # combine terrestrial island and coastal ecological zones

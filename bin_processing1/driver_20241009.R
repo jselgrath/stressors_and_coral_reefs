@@ -5,8 +5,15 @@
 
 # --------------------------------------------
 # driver
+
+# ------------------------------------------------------
 remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+# ------------------------------------------------------
 
 # SET FOLDER TO TRAIN OR TEST DATA BASED ON WHAT WANT TO SOURCE
 

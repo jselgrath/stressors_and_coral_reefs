@@ -7,7 +7,10 @@
 # GOAL: set up variables for models - was code chunk 3 in orig code
 #####################################
 remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/")
+
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
 # load data 
 d0<-read_csv("./results_test/13_IndpVar_Pts_all.csv")%>%
