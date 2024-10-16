@@ -192,6 +192,20 @@ source("./bin_processing1/12_1pointJoin_habitatDist_SgMgCo_test.R")
 # ------------------------------------
 source("./bin_processing1/12_2pointJoin_habitatDist_updateCoWithENN_train.R")
 source("./bin_processing1/12_2pointJoin_habitatDist_updateCoWithENN_test.R")
+# input:   
+# output: 
+
+# -----------------------------------
+# add in zones for seagrass and mangrove distance
+# -----------------------------------
+source("./bin_processing1/13_pointJoin_sg_mg_buffer_distance_train_test.R")
+# input:   ./gis/0most_shp/seagrass_buffer/seagrass_buf_FA2_20160525.shp
+#          ./gis/0most_shp/mangrove_buffer/mangrove_buf_FA2_20160525.shp
+#         ./results_test/hab_Resil_Pts_RS.gpkg
+#         ./results_train/hab_Resil_Pts_RS.gpkg
+# output: ./results_train/13_distance_sg_mg_buf.gpkg # or test
+#         ./results_train/13_distance_sg_mg_buf.csv
+
 
 # ------------------------------------
 # merge all points together
@@ -204,8 +218,13 @@ source("./bin_processing1/13_point_MergeAll_test.R")
 
 
 # ------------------------------------
-# analyses setup
+# ANALYSIS SET UP
 # ------------------------------------
+
+# ------------------------------------
+# log transform - may add this back, but currently not using
+# -------------------------------
+# source("./bin_processing1/14_0_All_dataSetup_LogTransformations_Train.R")
 
 # ------------------------------------
 # center and standardize using z-scale transformation 

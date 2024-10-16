@@ -30,7 +30,7 @@ setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_c
 
 #read in shapefile of random point with resilience data
 pt<-st_read("./results_train/hab_Resil_Pts_RS.gpkg")%>%
-  select(PtID2,geom)%>%
+  select(PtID2,Geomorphic,geom)%>%
   glimpse()
 
 
@@ -52,9 +52,11 @@ v1p_s <- pt%>%
 min(v1p_s$Depth_m, na.rm=T)
 
 
+filter(v1p_s,Depth_m<= -10)
+
 # convert to data frame
 v1p<- as.data.frame(v1p_s)%>%
-  filter(Depth_m>=-15)%>%   # remove 9 points deeper than -15m
+  filter(Depth_m>=-10)%>%   # remove deep points
   glimpse()
 
 

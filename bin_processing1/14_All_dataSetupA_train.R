@@ -5,6 +5,7 @@
 
 #####################################
 # GOAL: set up variables for models - was code chunk 3 in orig code
+# center and scale
 #####################################
 
 
@@ -24,7 +25,7 @@ d0<-read_csv("./results_train/13_IndpVar_Pts_all.csv")%>%
 # organising so that numbers are separate from factors, should be same number of variables
 # dropping TYPE, ENN (same info as IdResil) and hab_dist
 d1<-d0%>%
-  select(PtID2, Depth1,EcoZone:mpa_status,mpa_barangay, Id_MunWtr, # character
+  select(PtID2:Depth1,EcoZone:mpa_status,mpa_barangay, Id_MunWtr, distance_sg,distance_mg,# character
          Id_resil,# response variable
          Depth_m,mpa_area_ha,allEffort2010:geom)%>% # numbers
   select(-TYPE,-ENN,-ENN_1)%>%
