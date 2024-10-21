@@ -256,6 +256,11 @@ source("./bin_processing1/16_All_correlationsViz.R")
 ####################
 # Analyses
 ####################
+# not using this, but separates reef flat and reef slope (not needed because model works well together)
+# A_analysis_with_geomorphic_separate_option.R
+
+# dredge full model
+source("./bin.../A_analysis_2024c.R")
 
 # ------------------------------------
 # model with 1 random effect
