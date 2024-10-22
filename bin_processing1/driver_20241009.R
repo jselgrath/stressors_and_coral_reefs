@@ -256,15 +256,70 @@ source("./bin_processing1/16_All_correlationsViz.R")
 ####################
 # Analyses
 ####################
-# not using this, but separates reef flat and reef slope (not needed because model works well together)
+# separates reef flat and reef slope (not needed because model works well together, so not using)
 # A_analysis_with_geomorphic_separate_option.R
 
-# dredge full model
+# A. dredge full model ------------------------
 source("./bin.../A_analysis_2024c.R")
+# input:  ./results_train/14_IndpVar_Pts_train.csv
+# output: ./results_train/mixedEf_final_all.R
+#         ./results_train/mixedEf_final_no_landscape.R
+#         ./results_train/mixedEf_final_all1.RData
+#         ./results_train/15_IndpVar_Pts_train_for_models_all.csv
+#         ./results_train/15_IndpVar_Pts_train_for_models_subset.csv
+
+# B. Figure 3a - full model------------------------
+source("./bin.../B_Fig3a_full_model.R")
+# input:  ./results_train/mixedEf_final_all.R
+# output: ./doc/Fig3a_final_model.tiff
+
+
+# B. Figure 3b - reduced model------------------------
+source("./bin.../B_Fig3b_reduced_model.R")
+# input:  ./results_train/mixedEf_final_no_landscape.R
+# output: ./doc/Fig3b_final_model_no_landscape.tiff
+
+# C. export residuals
+source("./bin/C_residuals_exporting_final_model.R")
+# input:  ./results_train/mixedEf_final_all.R
+#         ./results_train/mixedEf_final_no_landscape.R - not used
+#         ./results_train/15_IndpVar_Pts_train_for_models_subset.csv
+# output: ./results_train/full_model_residuals.csv
+#         ./results_train/full_model_residuals.shp
+#         ./results_train/full_model_residuals.gpkg
+
+# D. calculate wald scores
+source("./bin_analysis/D_TableS3_WaldScores_final_model.R")
+# input:  ./results_train/mixedEf_final_all.R
+# output: ./doc/TableS3_final_model_wald.csv
+
+
+# E. replace testing data in model
+source(",/bin_analysis/E_analysis_testing_data.R")
+# input:  ./results_train/mixedEf_final_all.R") # full model
+#         ./results_train/mixedEf_final_no_landscape.R
+#         ./results_test/14_IndpVar_Pts_test.csv
+# output: ./results_test/m_final_test_data.csv
+
+# graphs of predictive power
+source("./bin_analysis/F_Fig3c_d_prediction.R")
+# input:  ./results_test/m_final_test_data.csv
+
+
+# uncenter and undstandardize coefficents ------------------------
+source("./bin.../G_unscale_uncenter_parameters.R")
+# input: ./results_train/15_IndpVar_Pts_train_for_models_all.csv
+#         ./results_train/mixedEf_final_all1.R
+# output: 
+
+
+
+
+
 
 # ------------------------------------
 # model with 1 random effect
-source("./bin_analysis/Q41_analysis_20180623_mixedEf1.R")
+# source("./bin_analysis/Q41_analysis_20180623_mixedEf1.R")
 # input: 
 # output:            
  

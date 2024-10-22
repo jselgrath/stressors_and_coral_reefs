@@ -6,7 +6,6 @@
 # goal: figure 3a
 # Effects are standardized
 # -------------------------------------
-
 library(tidyverse)
 library(ggplot2)
 
@@ -20,21 +19,24 @@ setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_c
 # ------------------------------------------------------
 
 
-##############################
-# Load models##############
-# load final model output
-load("./results_train/Q41_model_52.R")
+# load data ------------------
+d5<-read_csv("./results_train/15_IndpVar_Pts_train_for_models_subset.csv")
+
+# load final model  ---------------
+load("./results_train/mixedEf_final_all.R")
 
 ############################
 # calculate se and CI######
 
 # http://www.talkstats.com/showthread.php/25420-Confidence-Interval-for-model-parameters-(in-R-lme4)
-
-models<-list(m.me_52)
-models2<-c("m.me_52")
+summary(m_final)
+tab_model (m_final, show.df = TRUE) 
+models<-list(m_final)
+models2<-c("m_final")
 models3<-c( "(a) Multi-year fishing, interaction")
 
-summary(m.me_52)
+summary(m_final)
+plot_model(m_final, vline.color = "lightgrey") 
 
 # run this before loop
 est<-data.frame()
@@ -65,12 +67,12 @@ est
 
 #
 # Make patch shape postive
-est$Estimate[est$Parameter=="Patch.shape"]<-est$Estimate[est$Parameter=="Patch.shape"]*-1
-est$lower[est$Parameter=="Patch.shape"]<-est$lower[est$Parameter=="Patch.shape"]*-1
-est$upper[est$Parameter=="Patch.shape"]<-est$upper[est$Parameter=="Patch.shape"]*-1
+# est$Estimate[est$Parameter=="Patch_complexity"]<-est$Estimate[est$Parameter=="Patch_complexity"]*-1
+# est$lower[est$Parameter=="Patch_complexity"]<-est$lower[est$Parameter=="Patch_complexity"]*-1
+# est$upper[est$Parameter=="Patch_complexity"]<-est$upper[est$Parameter=="Patch_complexity"]*-1
 
 # order the varaibles sensically
-est$ordr<--1*(c(1,7,8,6,5,4,3,2,9,10))
+est$ordr<--1*(c(1,2,4,3,8,6,7,5,9,10))
 
 est$Parameter<-reorder(as.factor(est$Parameter), as.numeric(est$ordr), FUN=mean)
 levels(est$Parameter)
@@ -78,22 +80,23 @@ dplyr::select(est,ordr, Parameter, model)
 
 # create labels for graphs
 est$labl<-as.character(est$Parameter)
-est$labl<-gsub("Population.density","Population density",est$labl)
-est$labl<-gsub("MPA601","MPA",est$labl)
-est$labl<-gsub("Market.proximity","Market proximity",est$labl)
-est$labl<-gsub("Patch.shape","Patch compactness",est$labl) # changing from shape to compactness and making positive below
-est$labl<-gsub("Seagrass.isolation","Seagrass isolation",est$labl)
-est$labl<-gsub("Fishing.legacy.1980.2000","Fishing legacy, 1980-2000",est$labl)
-est$labl<-gsub("Fishing.legacy.1980.2000:Population.density","Fishing legacy, 1980-2000:Population density",est$labl) 
-est$labl<-gsub("z.Lcum_blast10","Blast fishing, 2000-2010",est$labl)
-est$labl<-gsub("Population density:Blast fishing, 2000-2010","Blast fishing, 2000-2010:Population density", est$labl)
+est$labl<-gsub("Population_risk","Population density risk",est$labl)
+est$labl<-gsub("MPAprotected","MPA (protected)",est$labl)
+est$labl<-gsub("Seagrass_isolation","Seagrass isolation",est$labl)
+est$labl<-gsub("Fishing_legacy_1980_2000","Fishing legacy, 1980-2000",est$labl)
+est$labl<-gsub("Blast_fishing_2010_2000","Blast fishing, 2000-2010",est$labl)
+est$labl<-gsub("GeomorphicReef Slope","Geomorphic (Reef slope)",est$labl)
+est$labl<-gsub("Patch_complexity","Patch complexity",est$labl)
+
+
+
 # check labels
 est$labl
 
 # make column for insignificant values
 est$sig<-1
-est$sig[est$labl == "Population density" & est$model=="m.me_52"]<-0
-est$sig[est$labl == "Fishing legacy, 1980-2000" & est$model=="m.me_52"]<-0
+est$sig[est$labl == "Population density risk" & est$model=="m_final"]<-0
+# est$sig[est$labl == "Fishing legacy, 1980-2000" & est$model=="m.me_52"]<-0
 est$sig<-as.factor(est$sig)
 
 est
@@ -123,7 +126,9 @@ deets2<- theme(
 ########################
 # Graphing##############
 ppi=300
-tiff(paste("./doc/Fig3a_BlPop_",dateToday,"_%d.tiff",sep=""), width = (4)*ppi, height=(2)*ppi)
+
+# source("./bin_analysis/deets.R")
+tiff("./doc/Fig3a_final_model.tiff", width = (4)*ppi, height=(2)*ppi)
 
 # est2 doesn't have intercept
 g1<- 	ggplot(data = est2, aes(x=Parameter, y = Estimate,ymin=lower, ymax=upper, colour=sig)) + geom_point(size=5)
@@ -132,7 +137,7 @@ g1+
 	deets2+
 	ylab("Standardized effect size")+
 	xlab("Socio-economic        Biophysical")+
-	ylim(c(-1.5,1.5))+
+	ylim(c(-3,3))+
 	geom_errorbar(position = position_dodge(width = 0.2), width = 0.2) +
 	coord_flip() + #flips graph
 	scale_x_discrete(breaks = est$Parameter, labels=est$labl )+

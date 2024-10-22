@@ -14,7 +14,9 @@ library(sf)
 
 #########################
 remove(list=ls())
-setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+# setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
 ########### 
 # import point data from GIS - 5003 random points, 100m apart min, in Coral Area only
