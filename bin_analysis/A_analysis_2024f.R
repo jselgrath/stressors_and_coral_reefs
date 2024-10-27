@@ -29,110 +29,50 @@ remove(list=ls())
 setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
 # ---------------------------------------------
-# load data and select non-correlated variables (see Correlation Viz)
+# load data 
 # ---------------------------------------------
-d0<-read_csv("./results_train/14_IndpVar_Pts_train.csv")%>%
-  
-  # remove outlier - removing other ones below
-  filter(PtID2!=1384)%>%
-  
-  filter(Depth_m>-6)%>%
-  # reassigning geomorphology based on depth
-  mutate(Geomorphic2=if_else(-2.5>Depth_m,"Reef Slope",Geomorphic))%>%
-  mutate(Geomorphic2=if_else(-.5<Depth_m,"Reef Flat",Geomorphic2))%>%
-  
-  # removing coastal zone -------------------
-  filter(EcoZone2!="Coastal")%>%
-  glimpse()
-
-d1<-d0%>%
-  mutate(distance_mg2=if_else(distance_mg=="250" | distance_mg=="500" | distance_mg== "750","250-750", distance_mg))%>% # condense mg categories based on graphs below
-  
-  mutate(MPA=as.factor(if_else(mpa=="unprotected","open",mpa)),
-         longitude=as.factor(longitude),
-         ecological_zone=as.factor(EcoZone2),
-         municipality=as.factor(Id_MunWtr),
-         Depth_m=Depth_m*-1, #)%>%
-         Reef_state=as.factor(Id_resil),
-         Geomorphic=as.factor(Geomorphic),
+d1<-read_csv("./results_train/16_IndpVar_Pts_train.csv")%>%
+  mutate(MPA=as.factor(MPA), 
+         ecological_zone=as.factor(ecological_zone),
+         Depth_m=Depth_m*-1,
          Geomorphic2=as.factor(Geomorphic2))%>%
-  mutate(distance_sg=factor(distance_sg),
-         distance_mg=factor(distance_mg),
-         distance_mg2=factor(distance_mg2)
-  )%>%
   glimpse()
-
-# check new assignment of reef flat etc
-cbind(d1$Geomorphic,d1$Geomorphic2,d1$Depth_m)
-
-# graph updated variable ------------------
-ggplot(d1,aes(x,y,color=Depth_m,shape=Geomorphic2 ))+geom_point()
-
-d1%>%
-  filter(Geomorphic2=="Reef Slope")%>%
-  ggplot(aes(x,y,color=Depth_m,shape=Geomorphic2 ))+geom_point()
-
-d1%>%
-  filter(Geomorphic2=="Reef Flat")%>%
-  ggplot(aes(x,y,color=Depth_m,shape=Geomorphic2 ))+geom_point()
-
-
-
-range(d1$Depth_m,na.rm=T)
-
-unique(d0$EcoZone2)
-d1$EcoZone2[d1$EcoZone2=="Terrestrial Island"]<-"Coastal"
-unique(d1$EcoZone2)
-
-# with(d1,xyplot(Id_resil~Depth_m|EcoZone2,type=c('g','p','l'),
-               # layout=c(3,1), index.cond = function(x,y)max(y)))
-
-
+  
 # check depth representation # ---------------------------------------------
-min(d1$Depth_m, na.rm=T)
+max(d1$Depth_m, na.rm=T)
 
-
-# ---------------------------------------------
-# subset data and make factors
-# ---------------------------------------------
-d2a<-d1%>%
-    dplyr::select(PtID2,Reef_state,ecological_zone,longitude, mpa_barangay,MPA,mpa_area_ha,municipality, mpa_area_ha,Depth_m,sg_minDist_100,mg_minDist_100,co_minDist_100, distance_sg,distance_mg, distance_mg2,PopRskDecay, PopRskDecay.Nrm,fYrLag30A, cum_blast00, cum_FA_blast00,cum_FA_blast10,cum_kaykay00, cum_poison00,divGen2010,CoRuArea,CoRuEdg2Area,FRAC,PROX,SHAPE, PARA,CoRuEdg2Area,Geomorphic,Geomorphic2,x,y)%>%
-  glimpse()
-
-d2<-na.omit(d2a)
-
-
-
-
-# ---------------------------------------------
-# further subset, remove outliers
-# ---------------------------------------------
-d3<-d2%>%
-  dplyr::select(PtID2,Reef_state,ecological_zone,MPA,Depth_m,sg_minDist_100,mg_minDist_100,distance_sg,distance_mg, distance_mg2,PopRskDecay, PopRskDecay.Nrm,fYrLag30A, cum_FA_blast10,cum_kaykay00, cum_poison00,divGen2010,CoRuArea,CoRuEdg2Area,Geomorphic,Geomorphic2,SHAPE,PARA,x,y)%>%
+# calc percent
+d1%>%
+  group_by(Reef_state)%>%
+  summarize(n=n())%>%
   glimpse()
 
 
+
+with(d1,xyplot(Reef_state~Depth_m|ecological_zone,type=c('g','p','l'),
+layout=c(3,1), index.cond = function(x,y)max(y)))
+
+
+
+# ---------------------------------------------
+# centering variables based on mean
+# from gelman and hill p 55
+# https://www.r-bloggers.com/a-faster-scale-function/
+# or substract by mean and divide by max (0-1)
+# ---------------------------------------------
 
 # ---------------------------------------------
 # center and scale function
 # ---------------------------------------------
 cs.<- function(x) scale(x,center=TRUE,scale=TRUE)
 
-with(d3,plot(Depth_m,cum_FA_blast10))
-
-
-# check centering and scaling - .cs better than z. scores because filtered data -----------
-t0<-cbind(cs.(d1$Depth_m),d1$z.Depth_m)
-t0
-colMeans(t0)
-apply(t0,2,sd)
-
+with(d1,plot(Depth_m,cum_FA_blast10))
 
 # ---------------------------------------------
 # models - small to make sure it works
 # ---------------------------------------------
 m1<-lme4::glmer(Reef_state ~ cs.(Depth_m) +(1|ecological_zone), # was depth - changing because log z score
-					family=binomial(link=logit), data=d3)
+					family=binomial(link=logit), data=d1)
 summary(m1)
 Anova(m1)
 tab_model(m1, show.df = TRUE)
@@ -142,29 +82,12 @@ plot_model(m1, vline.color = "lightgrey")
 
 # another small model # ---------------------------------------------
 m2<-lme4::glmer(Reef_state ~ cs.(Depth_m) +MPA +(1|ecological_zone), 
-                family=binomial(link=logit), data=d3)
+                family=binomial(link=logit), data=d1)
 summary(m2)
 Anova(m2)
 tab_model(m2, show.df = TRUE)
 plot_model(m2, vline.color = "lightgrey") 
 
-
-
-# another small model # ---------------------------------------------
-m3<-lme4::glmer(Reef_state ~ cs.(Depth_m) +MPA +distance_sg+(1|ecological_zone), 
-                family=binomial(link=logit), data=d3)
-summary(m3)
-Anova(m3)
-tab_model(m3, show.df = TRUE)
-plot_model(m3, vline.color = "lightgrey") 
-
-# another small model # ---------------------------------------------
-m4<-lme4::glmer(Reef_state ~ cs.(Depth_m) +MPA +distance_mg2+(1|ecological_zone), 
-                family=binomial(link=logit), data=d3)
-summary(m4)
-Anova(m4)
-tab_model(m4, show.df = TRUE)
-plot_model(m4, vline.color = "lightgrey") 
 
 
 
@@ -183,12 +106,13 @@ plot_model(m4, vline.color = "lightgrey")
 
 
 # ---------------------------------------------
-# FULL MODEL - log variables it is not sig dif using Anova, so removing.  -----------------------------------
+# FULL MODEL - log variables it is not sig dif using Anova, so removing
 # ---------------------------------------------
 m_all<-lme4::glmer(Reef_state ~ 
                      cs.(Depth_m) +
+                     # cs.(sg_minDist_100)+
                      cs.(I(sg_minDist_100^2))+
-                     cs.(SHAPE)+
+                     cs.(-SHAPE)+
                      cs.(PopRskDecay.Nrm)+
                      cs.(fYrLag30A)+
                      cs.(cum_FA_blast10)+
@@ -197,7 +121,7 @@ m_all<-lme4::glmer(Reef_state ~
                      MPA+
                      # Geomorphic2+
                      (1|ecological_zone), 
-                family=binomial(link=logit), data=d3, na.action = "na.fail")
+                family=binomial(link=logit), data=d1, na.action = "na.fail")
 
 summary(m_all)
 Anova(m_all)
@@ -218,14 +142,14 @@ qqmath(ranef(m_all))
 # https://stats.stackexchange.com/questions/196724/how-to-identify-outliers-and-do-model-diagnostics-for-an-lme4-model
 # https://stackoverflow.com/questions/24268031/unscale-and-uncenter-glmer-parameters?rq=1
 # ---------------------------------------------
-# view(cbind(residuals(m_all),d3$PtID2)) # outlier at PtID=1384
+# view(cbind(residuals(m_all),d1$PtID2)) # outlier at PtID=1384
 range(residuals(m_all,type="deviance"))
 
 # ran this iteratively with m_all2 & d4
-outliers<-data.frame(cbind(residuals(m_all,type="deviance"),d3$PtID2))%>%
+outliers<-data.frame(cbind(residuals(m_all,type="deviance"),d1$PtID2))%>%
   mutate(residuals=X1,
           PtID2=X2)%>%
-  select(-X1,-X2)%>%
+  dplyr::select(-X1,-X2)%>%
   filter(abs(residuals)>2.5)%>%
   # filter(residuals<(-2))%>% #removed 3 more
   # filter(abs(residuals)>2)%>%
@@ -233,7 +157,7 @@ outliers<-data.frame(cbind(residuals(m_all,type="deviance"),d3$PtID2))%>%
   glimpse()
 
 outliers2<-outliers%>%
-  left_join(d3)%>%
+  left_join(d1)%>%
   glimpse()
 
 # plot outliers - all places with coral
@@ -242,7 +166,7 @@ ggplot(outliers2,aes(x,y,color=Depth_m,shape=MPA ))+geom_point()
 
 
 # remove large outliers --------------------------------------------------
-d4<-d3%>%
+d4<-d1%>%
   filter(PtID2!=131, PtID2!= 135, PtID2!= 127, PtID2!=1083, PtID2!= 1006, 
          PtID2!= 966, PtID2!= 993, PtID2!=43,PtID2!=161,PtID2!=126 ,PtID2!=1146,PtID2!=4140
          # , PtID2!=111, PtID2!=113, 
@@ -251,8 +175,9 @@ d4<-d3%>%
   
 m_all2<-lme4::glmer(Reef_state ~ 
                       cs.(Depth_m) +
+                      # cs.(sg_minDist_100)+
                       cs.(I(sg_minDist_100^2))+
-                      cs.(SHAPE)+
+                      cs.(-SHAPE)+
                       cs.(PopRskDecay.Nrm)+
                       cs.(fYrLag30A)+
                       cs.(cum_FA_blast10)+
@@ -284,7 +209,7 @@ qqmath(ranef(m_all2))
 
 # less than 2 are considered to be just as good as the top model and thus we shouldn’t just discount them
 
-m_all_set<-dredge(m_all, rank = "AICc")
+m_all_set<-dredge(m_all2, rank = "AICc")
 head(m_all_set)
 
 
@@ -354,8 +279,8 @@ plotResiduals(simulationOutput, form = cs.(d_fitted$Depth_m))
 plotResiduals(simulationOutput, form = cs.(d_fitted$sg_minDist_100)) # not normal - maybe over dispersed?
 plotResiduals(simulationOutput, form = cs.(d_fitted$PopRskDecay.Nrm))
 plotResiduals(simulationOutput, form = cs.(d_fitted$fYrLag30A))
-plotResiduals(simulationOutput, form = cs.(log(d_fitted$cum_FA_blast10+1))) # not normal - maybe over dispersed?
-plotResiduals(simulationOutput, form = cs.(log(d_fitted$CoRuEdg2Area+1)))
+plotResiduals(simulationOutput, form = cs.(d_fitted$cum_FA_blast10)) # not normal - maybe over dispersed?
+# plotResiduals(simulationOutput, form = cs.(log(d_fitted$CoRuEdg2Area+1)))
 # against factors
 plotResiduals(simulationOutput, form = (d_fitted$MPA))
 # plotResiduals(simulationOutput, form = (d_fitted$Geomorphic2))
@@ -391,12 +316,14 @@ testDispersion(fittedModel)
 d5<-d4%>%
   mutate(Depth=cs.(Depth_m)[,1], # [,1] calls it out of the matrix
          Seagrass_isolation=cs.(I(sg_minDist_100^2))[,1],
-         Patch_complexity=cs.(SHAPE)[,1],
+         # Seagrass_isolation=cs.(sg_minDist_100)[,1],
+         # Patch_complexity=cs.(SHAPE)[,1],
+         Patch_compactness=cs.(-SHAPE)[,1],
          Population_risk=cs.(PopRskDecay.Nrm)[,1],
          Fishing_legacy_1980_2000=cs.(fYrLag30A)[,1],
          Blast_fishing_2010_2000=cs.(cum_FA_blast10)[,1])%>%
   dplyr::select(
-    Reef_state,Depth, Seagrass_isolation,Patch_complexity,Population_risk,
+    Reef_state,Depth, Seagrass_isolation,Patch_compactness,Population_risk,
     Fishing_legacy_1980_2000,Blast_fishing_2010_2000,MPA,Ecological_zone=ecological_zone,x,y,PtID2)%>%
   glimpse()
 
@@ -406,7 +333,8 @@ d5<-d4%>%
 # final full model ----------------------------
 m_final<-lme4::glmer(Reef_state ~ 
                        Depth+
-                       Patch_complexity+
+                       # Patch_complexity+
+                       Patch_compactness+
                        Seagrass_isolation+
                        Population_risk+
                        Fishing_legacy_1980_2000+
@@ -421,12 +349,25 @@ m_final<-lme4::glmer(Reef_state ~
 summary   (m_final)
 tab_model (m_final, show.df = TRUE) 
 plot_model(m_final, vline.color = "lightgrey") 
+t1<-tab_model (m_final, show.df = TRUE)%>%
+  glimpse()
+display(m_final)
+o1<-display(m_final)
+str(o1)
+
+coef(m_final)  # estimated intercepts for each eco zone # see gelman and hill p303
+fixef(m_final) #estimated averages over the eco zones # average coefficents
+ranef(m_final) # group level errors for intercepts and slopes
+# results of fixef and ranef add up to coef
+
+# writm_final# write_csv(t1 ,"./doc/final_model_stats.csv")
 
 
 # above, without landscape var (used this because landscape variables are usually not included in coral surveys. Used for analysis in paper, but not included here.)
 m_final_no_landscape<-lme4::glmer(Reef_state ~ 
                        Depth+
-                       # Patch_complexity+
+                         # Patch_complexity+
+                         # Patch_compactness+
                        # Seagrass_isolation+
                        Population_risk+
                        Fishing_legacy_1980_2000+
@@ -441,6 +382,7 @@ m_final_no_landscape<-lme4::glmer(Reef_state ~
 summary   (m_final_no_landscape)
 tab_model (m_final_no_landscape, show.df = TRUE) 
 plot_model(m_final_no_landscape, vline.color = "lightgrey") 
+display(m_final_no_landscape)
 
 # ---------------------------------
 # SAVE 
@@ -457,7 +399,7 @@ save.image("./results_train/mixedEf_final_all1.RData")
 
 # save modified datasets -------------
 # THESE ARE SIMILAR. d4 has all variables, d5 has updated names for clean final model - in d5 seagrass is exponated
-write_csv(d4,"./results_train/15_IndpVar_Pts_train_for_models_all.csv")
-write_csv(d5,"./results_train/15_IndpVar_Pts_train_for_models_subset.csv")
+write_csv(d4,"./results_train/17_IndpVar_Pts_train_for_models_all.csv")
+write_csv(d5,"./results_train/17_IndpVar_Pts_train_for_models_subset.csv")
 
 

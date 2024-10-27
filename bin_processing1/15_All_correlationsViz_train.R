@@ -26,21 +26,21 @@ d1<-read_csv("./results_train/14_IndpVar_Pts_train.csv")%>%
 
 ########################
 # Correlations between variables
-cor(d1$z.sg_minDist,d1$z.mg_minDist)
-cor(d1$z.PopRskDecay,d1$z.mg_minDist) # these are correlated
+cor(d1$sg_minDist,d1$mg_minDist)
+cor(d1$PopRskDecay,d1$mg_minDist) # these are correlated
 
 
 # 2010 variables -----------------
 names(d1)
 
 d.f<-d1%>%
-  dplyr::select(z.allEffort2010:z.freqDest.Norm)
+  dplyr::select(allEffort2010:freqDest.Norm)
 dfcor<-round(cor(d.f, use="complete"),2)
 corrplot(dfcor, method="number", type = "lower")
 
 # landscape
 d.f2<-d1%>%
-  dplyr::select(z.CoRuLngth:z.PopRskDecay)
+  dplyr::select(CoRuLngth:PopRskDecay)
 dfcor2<-round(cor(d.f2, use="complete"),2)
 corrplot(dfcor2, method="number")
 corrplot(dfcor2)
@@ -49,35 +49,32 @@ corrplot(dfcor2)
 # all highly correlated
 names(d1)
 d.f3<-d1%>%
-  dplyr::select(z.fYr00A:z.fYrLag50A)
+  dplyr::select(fYr00A:fYrLag50A)
 dfcor3<-round(cor(d.f3, use="complete"),2)
 corrplot(dfcor3, method="number")
 corrplot(dfcor3)
 
 # fishing var - other
 d.f4<-d1%>%
-  dplyr::select(z.fYrLag30A,z.dfYr00:z.dfYrLag40A)
+  dplyr::select(fYrLag30A,dfYr00:dfYrLag40A)
 dfcor4<-round(cor(d.f4, use="complete"),2)
 corrplot(dfcor4, method="number")
 corrplot(dfcor4)
 
 # other - removed ones that were correlated >0.7
 d.f5<-d1%>%
-  dplyr::select(z.sg_minDist,z.co_minDist_100,z.PopRskDecay,z.fYrLag30A,z.cum_blast00,z.cum_FA_blast00,z.cum_kaykay00,z.cum_poison00,z.divGen2010,z.mpa_area_ha,z.Depth_m,z.CoRuArea,z.CoRuEdg2Area,z.FRAC,z.PROX)
+  dplyr::select(sg_minDist,co_minDist_100,PopRskDecay,fYrLag30A,cum_blast00,cum_FA_blast00,cum_kaykay00,cum_poison00,divGen2010,dfYr00,mpa_area_ha,Depth_m,SHAPE)
 
 dfcor5<-round(cor(d.f5, use="complete"),2)
 corrplot(dfcor5, method="number")
 corrplot(dfcor5)
 
-
-
-# Dest fishing 00 is not correlated  with fishing >= 20 years
-# dest fishing lag 10 or lag 20 is not correlated with fishign at 00.
 # >.7 is threshold here
 
+dfcor5_d<-data.frame(dfcor5)
 
 # save
-write_csv(dfcor5,file="./doc/correlations_train.csv")
+write_csv(dfcor5_d,file="./doc/correlations_train_7_thresh.csv")
 
 # 0.7 threshold. SIGen not sig correl. could use FreqAll OR FreqDest+FreqNonDest
 # fishing and dest fishing stop being highly correlated for 20+ years ago (e.g. fYr20A)

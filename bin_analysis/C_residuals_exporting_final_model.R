@@ -9,6 +9,7 @@
 library (arm)
 library(ggplot2)
 library(tidyverse)
+library(sf)
 
 # ------------------------------------------------------
 remove(list=ls())
@@ -25,7 +26,7 @@ load("./results_train/mixedEf_final_all.R") #full model
 load("./results_train/mixedEf_final_no_landscape.R") #full model, no landscape variables
 
 # # load data 
-d5<-read_csv("./results_train/15_IndpVar_Pts_train_for_models_subset.csv")%>%
+d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")%>%
   mutate(MPA=as.factor(MPA),Ecological_zone=as.factor(Ecological_zone))%>%
   glimpse()
 
@@ -50,11 +51,11 @@ head(fit)
 with(fit,plot(fit$resid~fit$fitVal))
 
 #merge residuals with orig data
-d5<-cbind(d5,fit)
-plot(d5$resid~d5$fitVal)
+d6<-cbind(d5,fit)
+plot(d6$resid~d6$fitVal)
 
-names(d5)
-d3<-dplyr::select(d5,x,y,PtID2,resid,fitVal)%>%
+names(d6)
+d3<-dplyr::select(d6,x,y,PtID2,resid,fitVal)%>%
   glimpse()
 head(d3)
 

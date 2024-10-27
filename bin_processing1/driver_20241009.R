@@ -227,13 +227,22 @@ source("./bin_processing1/13_point_MergeAll_test.R")
 # source("./bin_processing1/14_0_All_dataSetup_LogTransformations_Train.R")
 
 # ------------------------------------
-# center and standardize using z-scale transformation 
+# organizing variables by categorical and numeric
 # ------------------------------------
-source("./bin_processing1/14_All_dataSetupA_train.R") # was 3
+source("./bin_processing1/14_All_dataSetupA_train.R") 
 source("./bin_processing1/14_All_dataSetupA_test.R")
 # input:       ./results_train/13_IndpVar_Pts_all.csv
 # output:      ./results_train/14_IndpVar_Pts_train.csv
-# output:      ./doc/14_IndpVar_Pts_MeanSD_train.csv        # mean and SD 
+
+
+
+
+# ------------------------------------
+# look at variables
+# ------------------------------------
+source("./bin_processing1/15_All_correlationsViz_train.R") 
+# input:      ./results_train/14_IndpVar_Pts_train.csv
+# output:     ./doc/correlations_train_7_threshold.csv
 
 
 # ------------------------------------
@@ -241,46 +250,46 @@ source("./bin_processing1/14_All_dataSetupA_test.R")
 # remove outlier
 # run all data setup
 # ------------------------------------
-source("./bin_processing1/15_All_dataSetupB_train.R") # was 4
-source("./bin_processing1/15_All_dataSetupB_test.R")
+source("./bin_processing1/16_All_dataSetupB_train.R") # was 4
+source("./bin_processing1/16_All_dataSetupB_test.R")
 # input: ./results_test/14_IndpVar_Pts_test.csv
-# output: ./results_test/14_IndpVar_Pts_test.csv
+# output: ./results_test/16_IndpVar_Pts_test.csv
 
 
-# look at variables
-source("./bin_processing1/16_All_correlationsViz.R") 
-# input:      ./results_train/14_IndpVar_Pts_train.csv
-# output:     ./doc/correlations_train.csv
+
+
+
+# ------------------------------------
+# calc summary statistics - NEED TO  FINISH THIS CODE
+# ------------------------------------
+# output:      ./doc/14_IndpVar_Pts_MeanSD_train.csv        # mean and SD 
 
 
 ####################
 # Analyses
 ####################
-# separates reef flat and reef slope (not needed because model works well together, so not using)
-# A_analysis_with_geomorphic_separate_option.R
-
 # A. dredge full model ------------------------
-source("./bin.../A_analysis_2024c.R")
-# input:  ./results_train/14_IndpVar_Pts_train.csv
+source("./bin_analysis/A_analysis_2024f.R")
+# input:  ./results_train/16_IndpVar_Pts_train.csv
 # output: ./results_train/mixedEf_final_all.R
 #         ./results_train/mixedEf_final_no_landscape.R
 #         ./results_train/mixedEf_final_all1.RData
-#         ./results_train/15_IndpVar_Pts_train_for_models_all.csv
-#         ./results_train/15_IndpVar_Pts_train_for_models_subset.csv
+#         ./results_train/17_IndpVar_Pts_train_for_models_all.csv
+#         ./results_train/17_IndpVar_Pts_train_for_models_subset.csv
 
 # B. Figure 3a - full model------------------------
-source("./bin.../B_Fig3a_full_model.R")
+source("./bin_analysis/B_fig_3a_full_model.R")
 # input:  ./results_train/mixedEf_final_all.R
-# output: ./doc/Fig3a_final_model.tiff
+# output: ./doc/fig_3a_full_model.tif
 
 
 # B. Figure 3b - reduced model------------------------
-source("./bin.../B_Fig3b_reduced_model.R")
+source("./bin_analysis/B_fig_3b_reduced_model.R")
 # input:  ./results_train/mixedEf_final_no_landscape.R
-# output: ./doc/Fig3b_final_model_no_landscape.tiff
+# output: ./doc/fig_3b_reduced_model.tif
 
 # C. export residuals
-source("./bin/C_residuals_exporting_final_model.R")
+source("./bin_analysis/C_residuals_exporting_final_model.R")
 # input:  ./results_train/mixedEf_final_all.R
 #         ./results_train/mixedEf_final_no_landscape.R - not used
 #         ./results_train/15_IndpVar_Pts_train_for_models_subset.csv
@@ -295,7 +304,7 @@ source("./bin_analysis/D_TableS3_WaldScores_final_model.R")
 
 
 # E. replace testing data in model
-source(",/bin_analysis/E_analysis_testing_data.R")
+source("./bin_analysis/E_analysis_testing_data.R")
 # input:  ./results_train/mixedEf_final_all.R") # full model
 #         ./results_train/mixedEf_final_no_landscape.R
 #         ./results_test/14_IndpVar_Pts_test.csv
@@ -303,12 +312,12 @@ source(",/bin_analysis/E_analysis_testing_data.R")
 
 # graphs of predictive power
 source("./bin_analysis/F_Fig3c_d_prediction.R")
-# input:  ./results_test/m_final_test_data.csv
-
+# input:    ./results_test/m_final_test_data.csv
+# output:   ./results_test/Fig3c3d_.tiff
 
 # uncenter and undstandardize coefficents ------------------------
-source("./bin.../G_unscale_uncenter_parameters.R")
-# input: ./results_train/15_IndpVar_Pts_train_for_models_all.csv
+source("./bin_analysis/G_unscale_uncenter_parameters.R")
+# input:  ./results_train/15_IndpVar_Pts_train_for_models_all.csv
 #         ./results_train/mixedEf_final_all1.R
 # output: 
 
@@ -317,163 +326,3 @@ source("./bin.../G_unscale_uncenter_parameters.R")
 
 
 
-# ------------------------------------
-# model with 1 random effect
-# source("./bin_analysis/Q41_analysis_20180623_mixedEf1.R")
-# input: 
-# output:            
- 
-# ------------------------------------
-# graph models
-source("Q41_ModelVizGraph_miEffects2.R")
-# input: 
-# output:    
-
-# ------------------------------------
-# graph models for paper
-source("Q41_Fig4.R")
-# input: ./results/RS_only/Q41_model_20161109_mixedEf1_52.R
-# output: Fig4
-
-# ------------------------------------
-# model residuals
-source("Q41_Residuals_ExportingMixedEf.R")
-# input: 
-# output:    
-
-# source("Q41_Residuals_Graphing.R")
-source("Q41_FigS2.R")
-# input: 
-# output:    
-
-# ------------------------------------
-# re-run models with testing data
-# ------------------------------------
-
-# First, create data by subbing testing points in for real points by renaming folders
-# Note: Easier to do manually by changing folder names so code stays updated.
-source("Q_All_dataSetup1_ReduceVariables_20160831.R") 
-# input: 
-# output: IndpVar_Ptsa_RS.csv
-
-# log transform variables
-source("Q_All_dataSetup2_LogTransformations_20161028.R")
-source("Q_All_dataSetup3_20161028.R")
-source("Q_All_dataSetup4_20161028.R") #was analysis setup
-source("Q_All_dataSetup5_20161028_LongNames.R")
-
-
-################
-# Analysis
-source("Q51_analysis_m_me_testingData_20161028.R")
-#output: Q51_data_test.csv
-
-source("Q51_Fig6_ ModelVizGraph_TestingData.R")
-
-
-
-
-
-
-
-
-
-##################################################
-#############
-# Below are old models
-##########
-# model with all variables
-source("Q11_analysis_20160819.R")
-# output: Q11_model_20160816.R = final model (m8)
-
-# examine residuals
-source("Q11_residuals_20160826.R")
-
-#setup data for graphing final model
-source("Q11_ModelVizDataSetup_20160826.R")
-
-#graphing final model
-source("Q11_ModelVizGraph_20160826.R")
-
-#Exporting Residuals to map in ArcGIS
-source("Q11_ExportingResiduals_20160816.R")
-
-
-##############
-# Redoing analysis with mixed effects & with no dest fishing
-##############
-source("Q11_analysis_20160831_MixedEf2a.R")
-# output: Q11_model_20160831_mixedEf2a.R
-
-source("Q11_ModelVizDataSetup_MiEffects2_20160830.R") #not needed if use sjp.glmer
-
-source("Q11_ModelVizGraph_MiEffects2a.R") #with sjp.glmer
-source("Q11_analysis_20160831_MixedEf2b.R")
-#Q11_model_20160831_mixedEf2b.R
-source("Q11_ModelVizGraph_MiEffects2b.R")
-# several
-
-
-
-
-################################
-# Run model with independent data
-# This code needs updating for fishing
-##########################
-# reset data setup to be for Ground Truthing points
-setwd("C:/Users/Jenny/Dropbox/1PhD/R.projects/Ch5/Resilience/bin/")
-
-source("pointJoin21Resilience_GT.R")
-source("pointJoin22IndpVarFishingNorm_GT.R")
-source("pointJoin23FishingAllYrsNorm_GT.R")
-source("pointJoin24FishingYrs_NormCumulative_GT.R")
-source('pointJoin25FishingDestYrsNorm_GT.R')
-source("pointJoin26FishingYrsDest_NormCumulative_GT.R")
-source("pointJoin27IndpVarFragstat_GT.R")
-source("pointJoin28IndpVarOther_GT.R")
-# source("pointJoin29Risks_GT.R")
-source("pointJoin30IndpVarDist_GT.R")
-source("pointJoin31_PopRsk_GT.R")
-
-# source("pointJoin32habitatSGall_data_prox_u_20160628.R")
-# source("pointJoin33habitatSGall_data_prox_spatial_20160621.R") 
-# source("pointJoin34habitatMGall_data_prox_u_20160627.R")
-# source("pointJoin35habitatMG_data_prox_spatial_20160627.R") 
-
-# This is just from EcuDist in GIS. Simpler than above. 
-# With LEK sg in inner channel and updated mg on olango
-source("pointJoin32habitatDist_SgMg_20160831.R")
-
-source("pointJoin36_thermalStress98_07_20160907.R") # output: pts_ThermStress.csv
-
-source("point_MergeAll_GT.R") #output:  IndpVar_Pts_GT.shp/csv  
-
-############
-# analyses
-############
-setwd("C:/Users/Jenny/Dropbox/1PhD/R.projects/Ch5/Resilience/bin/")
-
-# reduce # of variables to reign thigns in a bit
-source("Q31_All_dataSetup_ReduceVariables_GT.R") #updated aug 1 2016
-#output: IndpVar_Pts1000b_GT.csv
-
-# remove Olango
-source("Q31_analysisSetup_GT.R")
-
-# model with all variables
-source("Q31_analysis_m_me2b_GT.R")
-# source("Q31_analysis_All.R") #probabilities for non-heirarchical models that fit well. Here with simplified output
-
-#orig
-source("Q31_ModelVizGraph_MiEffects2b_GT.R")
-source("Q11_ModelVizGraph_MiEffects2b_simple11.R") #or simple12
-source("Q11_Residuals_ExportingMixedEf_simple11.R")
-
-# updated with interactions
-source("Q31_analysis_20160923_MixedEf1b_simple2b.R")
-source("Q31_Residuals_ExportingMixedEf_simple18b2.R")
-source("Q31_ModelVizGraph_MiEffects1b_simple18b.R")
-
-# graph predicted values
-# source("Q31_ModelVizGraph_GT.R")
-# output (in doc): PredictedProb_box.png

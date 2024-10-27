@@ -70,8 +70,8 @@ f9<- read_csv("./results_test/11_pts_PopRsk_Norm.csv")%>%
 f10<-read_csv("./results_test/12_2pts_Co_Mg_Sg_minDist2.csv")%>%
   glimpse()
 
-f11<-read_csv("./results_test/13_distance_sg_mg_buf.csv")%>%
-  glimpse()
+# f11<-read_csv("./results_test/13_distance_sg_mg_buf.csv")%>%
+  # glimpse()
 
 ####################################
 # join new tables to original pt table
@@ -87,8 +87,8 @@ pts2<-f1%>% #f7p, f4p,f5p,,f17p,f18p,f19p,f20p,f21p,f22p, f11p, f12p,f13p,f6p,
   full_join(f8)%>%
   full_join(f9)%>%
   full_join(f10)%>%
-  full_join(f11)%>%
-  select(-geom)%>%
+  # full_join(f11)%>% # not using distance categories for habitats
+  dplyr::select(-geom)%>%
   glimpse()
 
 # merge with sf and remove fishing NAs

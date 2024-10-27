@@ -6,6 +6,8 @@
 # --------------------------------------------
 # goal:  Extract Wald test outputs from glmer logit model 
 # --------------------------------------------
+library(ggplot2)
+library(car)
 
 # --------------------------------------------
 # Info 
