@@ -11,6 +11,7 @@ library(lattice)
 library(boot)
 library(sjPlot)
 library(car)
+library(colorspace)
 
 
 # ------------------------------------------------------------------
@@ -25,6 +26,7 @@ setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_c
 d2<-read_csv("./results_test/m_final_test_data.csv")%>%
   glimpse()
 
+unique(d2$Ecological_zone )
 
 P.u<-mean(d2$p_m_final)
 P.sd<-sd(d2$p_m_final)
@@ -58,15 +60,10 @@ gg_final_no_l
 
 
 
-
-#######################3
-# graph box plot for pm13 and pm41
 #########################
 # reorganize data
-names(d2)
-
 d3<-d2%>%
-	tidyr::gather(model,estimate,p_m_final:p_m_final_no_l ,factor_key=TRUE)%>%
+	tidyr::gather(model,estimate,p_m_final:p_m_final_no_l)%>% # ,factor_key=TRUE
   glimpse()
 
 
@@ -79,14 +76,21 @@ head(d3)
 
 # create missing level for coastal, rubble. Set y value above range of graph's y value
 
-# temp1<-c("Coastal","0","0", "600",0,0,0,0,0,0,"p_m_final",5)
-# temp2<-c("Coastal","0","0", "600",0,0,0,0,0,0,"p_m_final_no_l ",5)
-# d4<-rbind(d3,temp1,temp2)
-# tail(d4)
-# str(d4)
+temp1<-c("Coastal",0,0,"p_m_final",0)
+temp2<-c("Coastal",0,0,"p_m_final_no_l",0)
+# create missing level for coastal, rubble. Set y value above range of graph's y value
+
+d4<-d3%>%
+  dplyr::select(Ecological_zone,State,Reef_state,model,estimate)%>%
+  rbind(temp1,temp2)%>%
+  mutate(Ecological_zone=factor(Ecological_zone),State=as.numeric(State),model=factor(model),estimate=as.numeric(estimate))%>%
+  glimpse()
+
+range(d4$estimate)
+
 
 # if no coastal
-d4<-d3
+# d4<-d3
 
 # name for reef state
 d4$Reef_state<-"Rubble"
@@ -95,48 +99,31 @@ d4$Reef_state<-as.factor(d4$Reef_state)
 
 glimpse(d4)
 
-# label for facet
-d4$fct<-"" #a
-# d4$fct[d4$model=="p_m_final_no_l "]<-"b"
 
-# theme info
-deets2<- theme(
-	axis.text =  element_text(size=rel(3.2), colour="black"), 
-	axis.title=element_text(size=rel(3.5),colour="black"), 
-	panel.grid=element_blank(), 
-	panel.background=element_rect(fill="#f7f7f7"),
-	panel.border=element_rect(fill=NA, colour = "black"),
-	strip.background = element_rect(colour=NA, fill=NA),
-	strip.text = element_text(hjust=0.02,size=rel(3.2), colour="black"),
-	legend.title = element_text(size=rel(3.5)),#, face="bold"
-	legend.text = element_text(size=rel(3.2)))
-
-# facet labels
-# flabels<-c(p_m_final=" Full model", p_m_final_no_l =" Simplified model")
-flabels<-c(p_m_final="", p_m_final_no_l ="")
 
 #######################
 # graphs
-# setwd("C:/Users/Jenny/Dropbox/1PhD/R.projects/Ch4/Resilience/doc/")
-ppi=300
-tiff("./doc/Fig3c3d_.tiff", width = 3*ppi, height=4*ppi)
 
-# full model
-gg2<-ggplot(data=d4, aes(x=Ecological_zone, y=estimate, fill=Reef_state))+ geom_boxplot(colour="black", fatten = 1.2, size=1,outlier.size = 2,na.rm = F)+geom_text(data=d4,aes(x=3.2,y=1,label=fct),size=7) #PtID_orig Source
+d4$fct<-""
 
-gg2+
-	ylab("Predicted probability of living coral\n")+
+
+
+source("./bin_analysis/deets.R")
+
+ggplot(data=d4, aes(x=Ecological_zone, y=estimate, fill=Reef_state))+ geom_boxplot(colour="black", size=1,outlier.size = 2,na.rm = F)+ #fatten = 1.1, 
+  geom_text(data=d4,aes(x=3.2,y=1,label=fct),size=2) +
+  deets5+
+	ylab("Predicted Probability of Living Coral\n")+
 	xlab("Ecological Zone")+
 	coord_cartesian(ylim=c(-0.01,1.01))+ # set y lim to data not including missing level spaceholder
-	theme_linedraw()+
-	facet_grid(model~.,labeller=labeller(model=flabels))+
-	scale_fill_manual(name="Mapped habitat",
-										values=c("#a6bddb", "#8856a7"))+
-										# black and white: values=c("#bdbdbd", "black"))+
-	deets2+
-	scale_x_discrete(breaks=c("Coastal", "Inner Reef", "Outer Reef"),labels = c("Coastal", "Inner\nreef", "Outer\nreef"))
+	# facet_grid(model~.,labeller=labeller(model=flabels))+
+  facet_grid(model~.,labeller=labeller(model=""))+
+  scale_fill_discrete_diverging(palette = "Berlin",nmax=5,order=c(5,4),name="Mapped Habitat")+
+										# values=c("#a6bddb", "#8856a7"))+
+										# values=c("#bdbdbd", "black"))+ #black and white: 
+	scale_x_discrete(breaks=c("Coastal", "Inner Reef", "Outer Reef"),labels = c("Coastal", "Inner\nReef", "Outer\nReef"))
 
-dev.off()
+ggsave("./doc/fig_3c_3d.tif", width = 6, height=8)
 
 
 

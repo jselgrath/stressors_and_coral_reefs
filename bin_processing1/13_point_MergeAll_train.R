@@ -71,8 +71,8 @@ f10<-read_csv("./results_train/12_2pts_Co_Mg_Sg_minDist2.csv")%>%
   glimpse()
 
 # seagrass and mangrove buffer distances
-f11<-read_csv("./results_train/13_distance_sg_mg_buf.csv")%>%
-  glimpse()
+# f11<-read_csv("./results_train/13_distance_sg_mg_buf.csv")%>%
+#   glimpse()
 
 
 ####################################
@@ -89,8 +89,8 @@ pts2<-f1%>% #f7p, f4p,f5p,,f17p,f18p,f19p,f20p,f21p,f22p, f11p, f12p,f13p,f6p,
   full_join(f8)%>%
   full_join(f9)%>%
   full_join(f10)%>%
-  full_join(f11)%>%
-  select(-geom)%>%
+  # full_join(f11)%>% # not using distance categories
+  dplyr::select(-geom)%>%
   glimpse()
 
 # merge with sf and remove fishing NAs
@@ -111,6 +111,21 @@ names(coord)<-c("x","y")
 # make dataframe - non-spatial
 pt4<-data.frame(cbind(pts3,coord)) %>%#confirmed same CID
   glimpse()
+
+# calc percent
+pt4%>%
+  group_by(Id_resil)%>%
+  summarize(n=n())%>%
+  glimpse()
+
+pct_coral<-646/3309
+pct_rubble<-2663/3309
+more_rubble<-2663/646
+
+stats<-data.frame(c(pct_coral,pct_rubble,more_rubble))%>%
+  glimpse()
+write_csv(stats,"./doc/percentage_stats.csv")
+
 
 
 ####################
