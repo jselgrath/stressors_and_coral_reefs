@@ -10,13 +10,12 @@
 remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-
-setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+# setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
 # ------------------------------------------------------
 
 # SET FOLDER TO TRAIN OR TEST DATA BASED ON WHAT WANT TO SOURCE
-
 # ------------------------------------
 # see folder: FishingMeasures for code to extract various measures of fishing effort
 # fishing measures code is NOT updated for new R packages
@@ -26,6 +25,8 @@ setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_c
 # Before run this code, First set random points in ArcGIS and save in ".../Ch5/Resilience/data/randompoints/")
 # ------------------------------------
 
+# Create random points list in R
+source("./bin_processing/0_random_points.R")
 
 # ------------------------------------
 # join points to coral/rubble data
@@ -37,7 +38,7 @@ source("./bin_processing1/1_pointJoin_resilience_test.R")
 #         ./gis/resilience/CoRu_Smplfd_20160628.shp
 # output: ./results_train/hab_Resil_Pts_RS.gpkg
 
-
+# for the rest of the processing need to update to new folder
 
 # ------------------------------------
 # join points with fishing effort data from 2010, gear diversity. 
@@ -248,12 +249,16 @@ source("./bin_processing1/15_All_correlationsViz_train.R")
 # ------------------------------------
 # remove olango, combine coastal and terr islands
 # remove outlier
+# remove NAs
+# remove correlated variables 
 # run all data setup
+# calculate percent cover stats
 # ------------------------------------
 source("./bin_processing1/16_All_dataSetupB_train.R") # was 4
 source("./bin_processing1/16_All_dataSetupB_test.R")
 # input: ./results_test/14_IndpVar_Pts_test.csv
 # output: ./results_test/16_IndpVar_Pts_test.csv
+#         ./doc/percentage_stats.csv
 
 
 
@@ -265,11 +270,11 @@ source("./bin_processing1/16_All_dataSetupB_test.R")
 # output:      ./doc/14_IndpVar_Pts_MeanSD_train.csv        # mean and SD 
 
 
-####################
-# Analyses
-####################
+
+# ANALYSES -------------------------
+
 # A. dredge full model ------------------------
-source("./bin_analysis/A_analysis_2024f.R")
+source("./bin_analysis/A_analysis.R")
 # input:  ./results_train/16_IndpVar_Pts_train.csv
 # output: ./results_train/mixedEf_final_all.R
 #         ./results_train/mixedEf_final_no_landscape.R

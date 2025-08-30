@@ -15,14 +15,21 @@ library(ggtext)
 remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-
-setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+# setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
 # ------------------------------------------------------
 
 
 # load data ------------------
-d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")
+d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")%>%
+  mutate(MPA=as.factor(MPA), 
+         # Depth=Depth*-1,
+         Ecological_zone=as.factor(Ecological_zone)
+         )%>%
+  glimpse()
+
+range(d5$Depth,na.rm=T)
 
 # load final model  ---------------
 load("./results_train/mixedEf_final_all.R")
@@ -32,13 +39,38 @@ load("./results_train/mixedEf_final_all.R")
 
 # http://www.talkstats.com/showthread.php/25420-Confidence-Interval-for-model-parameters-(in-R-lme4)
 summary(m_final)
-tab_model (m_final, show.df = TRUE) 
+tab_model (m_final, show.df = TRUE)
+get_model_data(m_final,type = c("est"))
 models<-list(m_final)
 models2<-c("m_final")
 models3<-c( "(a) Multi-year fishing, interaction")
 
+# plots odds rations
 summary(m_final)
-plot_model(m_final, vline.color = "lightgrey") 
+plot_model(m_final, type = "est", vline.color = "lightgrey")  # Fixed effects # using sjPlot
+plot_model(m_final, type = "re")  # Random effects
+#   type = c("est", "re", "eff", "emm", "pred", "int", "std", "std2", "slope", "resid", "diag"),
+
+
+
+# visualize aspects of final model ------------------------
+# conditional plot - all of the terms in the model must be specified (or use the median as a default)
+# By default, the reference value in visreg for a numeric variable is its mean, and for a factor its first, or reference, level
+
+# contrast plot - consider relative changes, or as they are called in statistics, contrasts
+# contrast models are better for logistic regression and random effect models 
+# https://pbreheny.github.io/visreg/articles/web/contrast.html
+visreg(m_final, "Depth", "MPA", type="contrast", ylab=expression(Delta*'Reef State'), 
+       points=list(col="#55555540", cex=0.25))
+visreg(m_final,"Patch_compactness","Ecological_zone", xlab="Patch compactness",type="contrast", ylab=expression(Delta*'Reef State'),         points=list(col="#55555540", cex=0.25))
+visreg(m_final,"Seagrass_isolation","Ecological_zone", xlab="Seagrass isolation",type="contrast", ylab=expression(Delta*'Reef State'),         points=list(col="#55555540", cex=0.25))
+visreg(m_final,"Population_risk","Ecological_zone", xlab="Population_risk",type="contrast", ylab=expression(Delta*'Reef State'),         points=list(col="#55555540", cex=0.25))
+visreg(m_final,"Fishing_legacy_1980_2000","Ecological_zone", xlab="Fishing_legacy_1980_2000",type="contrast", ylab=expression(Delta*'Reef State'),         points=list(col="#55555540", cex=0.25))
+visreg(m_final,"Blast_fishing_2010_2000","Ecological_zone", xlab="Blast_fishing_2010_2000",type="contrast", ylab=expression(Delta*'Reef State'),         points=list(col="#55555540", cex=0.25))
+
+# random effects
+v <- visreg(m_final, "Depth", by="ecological_zone", re.form=~(1|"ecological_zone"), plot=FALSE)
+plot(v, ylab="Reef State")
 
 # run this before loop
 est<-data.frame()

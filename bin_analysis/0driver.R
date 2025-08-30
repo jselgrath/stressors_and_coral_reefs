@@ -5,9 +5,12 @@
 # goal: driver script to show order of other scripts and to document input and output data
 ####################################################################################
 # SET FOLDER TO TRAIN OR TEST DATA BASED ON WHAT WANT TO SOURCE
+remove(list=ls())
+# setwd("C:/wd/Resilience/bin/")
+setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/")
 
 # libraries
-source("loadlibrariesatstart.R")
+source("./bin/loadlibrariesatstart.R")
 
 ###########
 # code not include here:
@@ -20,8 +23,7 @@ source("loadlibrariesatstart.R")
 ############
 # analyses setup
 ############
-remove(list=ls())
-setwd("C:/wd/Resilience/bin/")
+
 
 # reduce # of variables to reign things in a bit
 source("1_All_dataSetup1_ReduceVariables.R") 
@@ -107,3 +109,6 @@ source("E_analysis_testingData.R")
 source("F_Fig3c_3d_Prediction.R")
 # input: ./results/RS_only_test/Q51_data_test.csv
 # output: paste("./doc/Fig3c3d_",dateToday,".tiff",sep="")
+
+#moransI
+source("./0bin/H_morans_I.R")

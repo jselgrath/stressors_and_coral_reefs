@@ -16,7 +16,8 @@ remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 
-setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+# setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 
 # ------------------------------------------------------
 
@@ -88,7 +89,37 @@ plot(d_spatial[4])
 write_csv(d3, "./results_train/full_model_residuals.csv")
 
 st_write(d_spatial,"./results_train/full_model_residuals.shp", delete_layer=T)
-st_write(d_spatial,"./results_train/full_model_residuals.gpkg", delete_layer=T)
+st_write(d_spatial,"./results_train/full_model_residuals.gpkg", layer="model",delete_layer=T)
 
 # Next Step: Make figure in ArcGIS that includes 3 maps depicting point locations and values from d3. 
 # Maps: (1) Small residuals (2) Bright spots (3) Dark spots
+
+
+# repeat and export a version with all data ----------------------
+# Identify outliers (bright spots and dark spots)
+d7<-d6
+d7$BrightSpots<-0
+d7$BrightSpots[d7$resid>2] <-1
+
+d7$DarkSpots<-0
+d7$DarkSpots[-2>d7$resid] <-1
+
+# variable for any large residual
+d7$lgresid<-0
+d7$lgresid[d7$BrightSpots ==1]<-1
+d7$lgresid[d7$DarkSpots ==1]<-1
+
+# residuals that are not outliers
+d7$smResid<-0
+d7$smResid[d7$lgresid==0]<-1
+
+# make spatial file
+d_spatial_all<-d7%>%
+  st_as_sf(coords=c("x","y"), crs=32651)%>%
+  glimpse()
+
+print(st_crs(d_spatial_all))
+plot(d_spatial_all[4])
+
+st_write(d_spatial_all,"./results_train/full_model_residuals_data.shp", delete_layer=T)
+st_write(d_spatial_all,"./results_train/full_model_residuals.gpkg", layer="all",delete_layer=T)
