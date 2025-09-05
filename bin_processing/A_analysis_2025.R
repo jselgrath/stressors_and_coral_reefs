@@ -12,55 +12,71 @@
 # maybe want to remove NAs - check which variables have NAs because loose ~280 points
 # remove nas
 
+# https://crd230.github.io/lab8.html
+# https://rpubs.com/corey_sparks/111362
+#https://stat.ethz.ch/pipermail/r-sig-geo/2009-November/007034.html
+
+
 # ----------------------------------------------------------------
 library(tidyverse)
 library(ggplot2)
 library(lme4)
 library(lattice)
 library(boot)
-library(sjPlot)
 library(car)
 library(MuMIn)
 library(DHARMa)# residual diagnostics for heirarchical regression models
 library(colorspace)
 library(visreg)
+library(glmmTMB) #allows a binomial GLMM with spatial correlation structure
+library(spdep)
+library(MASS)   # for stepAIC
 
-# ------------------------------------------------------------------
-# driver
+
+
+# -------------------------------------------
 remove(list=ls())
-
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-# setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
+
+# -------------------------------------------
 
 
 # ---------------------------------------------
 # load data 
 # ---------------------------------------------
-d1<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>%
-  mutate(Depth_m=if_else(Depth_m>-15,Depth_m,-15))%>% #~8 deep outliers - probably misclassified in depth map
+d0<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>%
+  
+  # adjusting depth
+  mutate(Depth_m=if_else(Depth_m>-135,Depth_m,-15))%>% #~8 deep outliers - probably misclassified in depth map. 8 at 15m slightly more at 12
   mutate(Depth_m=if_else(Depth_m<0,Depth_m,-.1))%>% # one value above water - also misclassified
+  
   mutate(MPA=as.factor(MPA), 
          ecological_zone=as.factor(ecological_zone),
          Depth_m=Depth_m*-1,
-         Geomorphic2=as.factor(Geomorphic))%>%
+         # Reef_state=as.factor(Reef_state),
+         geomorphology=as.factor(geomorphology))%>%
   glimpse()
+
+d1<-data.frame(na.omit(d0))# 13 NAs - all in population risk variables
+
+d1%>%filter(point_id==371)%>% glimpse()  # 636
+
+d1$Depth_m[d1$point_id==856]<-5  # outlier depth is wrong
+d1$Depth_m[d1$point_id==371]<-2
 
 # check depth representation # ---------------------------------------------
 range(d1$Depth_m)
 
 # graph of depth
 with(d1,xyplot(Reef_state~Depth_m|ecological_zone,type=c('g','p','l'),
-               layout=c(3,1), index.cond = function(x,y)max(y)))
+               layout=c(4,1), index.cond = function(x,y)max(y)))
 
+# blast fishing in deep water
 
-# calc percent
 d1%>%
-  group_by(Reef_state)%>%
-  summarize(n=n())%>%
-  glimpse()
-
-
+  filter(Depth_m>12)%>%
+  ggplot(aes(x,y,color=Depth_m,size=cumulative_blast10 ))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
 
 # ---------------------------------------------
 # centering variables based on mean
@@ -72,65 +88,297 @@ d1%>%
 # ---------------------------------------------
 # center and scale function
 # ---------------------------------------------
-cs.<- function(x) scale(x,center=TRUE,scale=TRUE)
+cs.<- function(x) scale(x,center=FALSE,scale=TRUE)
 
-with(d1,plot(Depth_m,cumulative_blast10))
+# run cs fxn on variables
+d1$depth<-as.numeric(cs. (d1$Depth_m))
+d1$sg<-as.numeric(cs. (d1$point_dist_Seagrass))
+d1$mg<-as.numeric(cs. (d1$point_dist_Mangrove))
+d1$psi<-as.numeric(cs. (d1$patch_shape_index))
+d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
+d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))
+d1$fishing_30lag<-as.numeric(cs. (d1$fYrLag30A))
+d1$blast10<-as.numeric(cs. (d1$cumulative_blast10))
+d1$pr<-as.numeric(cs. (d1$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
 
-# ---------------------------------------------
-# models - small to make sure it works
-# ---------------------------------------------
-d1$depth_m_cs<-cs.(d1$Depth_m) # need this for visreg
+# precompute
+d1$sg2<-d1$sg^2
+d1$pri_f30<-d1$pr_inhab*d1$fishing_30lag
+d1$pri_b10<-d1$pr_inhab*d1$blast10
 
-m1<-lme4::glmer(Reef_state ~ depth_m_cs +(1|ecological_zone), # was depth - changing because log z score
-					family=binomial(link=logit), data=d1)
-summary(m1)
-Anova(m1)
-tab_model(m1, show.df = TRUE)
-plot_model(m1, vline.color = "lightgrey") 
-
-# graphs with visreg
-visreg(m1,"depth_m_cs",by="ecological_zone", xlab="Depth",ylab="Reef State")
-
-
-
-
-# another small model # ---------------------------------------------
-m2<-lme4::glmer(Reef_state ~ depth_m_cs +MPA +(1|ecological_zone), 
-                family=binomial(link=logit), data=d1)
-summary(m2)
-Anova(m2)
-tab_model(m2, show.df = TRUE)
-plot_model(m2, vline.color = "lightgrey") 
-
-
-visreg(m2,"depth_m_cs",by="ecological_zone", xlab="Depth",ylab="Reef State")
-
-
-# graphs to visually assess fit
-# http://127.0.0.1:29737/library/sjPlot/doc/plot_model_estimates.html
-# http://127.0.0.1:29737/library/sjPlot/doc/plot_interactions.html
-# 2017 version: https://www.rdocumentation.org/packages/sjPlot/versions/2.4.1/topics/sjp.glmer
-# The default is type = "fe", which means that fixed effects (model coefficients) are plotted.
-
-# https://stackoverflow.com/questions/53193940/plotting-results-of-logistic-regression-with-binomial-data-from-mixed-effects-mo
-
-
-
-
-
+glimpse(d1)
 # ---------------------------------------------
 # FULL MODEL - log variables it is not sig dif using Anova, so removing
 # ---------------------------------------------
+
+
+
+# build spatial matrix of coordaiates and neighbors list -------------------------------
+
+# matrix of coordinates of sample locations projected into meters for distance
+coords<-as.matrix(d1[, c("x", "y")])
+
+# Build nearest neighbor list ------------
+
+# OPTION1 -----------
+# knearneigh = number of neighbors. # k = 5 means: for each point, find the 5 nearest neighbors
+# knearneigh gives you a nearest-neighbor structure (which is not yet a full neighbor list)
+# knn2nb() Converts the nearest-neighbor object from knearneigh() into an nb object (neighbor list) that can be used in spatial weights (nb2listw()
+# If you want one fully connected graph (since there are subgraphs), switch to dnearneigh() with a radius chosen to cover the gaps.
+
+nb <- knn2nb(knearneigh(coords, k = 5)) # 5 nearest neighbors # Warning: "neighbour object has 3 sub-graphs" - points form disconnected groups (clusters), so some parts of the neighbor graph are not connected to others. Here probably the three ecological zones → so you get multiple "sub-graphs". It’s not necessarily an error — it’s telling you the spatial graph is not fully connected.Moran’s I still works, but it’s applied within those sub-graphs.
+
+# OPTION2 ------------
+# dnearneigh = distance based near neighbors d1 = closest, d2 = furtherst in meters (if projected. if not projected in km)
+
+# nb <- dnearneigh(coords, d1=0,d2=1000) #warning: neighbour object has 9 sub-graphs
+
+
+
+# Convert to spatial weights
+wts <- nb2listw(nb, style = "W") # assigns weights, creates listw object (Plant p93)
+
+
+
+# base function # ---------------------------
+fxn1<-as.formula(Reef_state ~ 
+              depth+
+              sg+
+              sg2+
+              mg+
+              psi+
+              # pr_orig+
+              pr_inhab+
+              fishing_30lag+
+              blast10+
+              # pr+ # OR point_dist_Mangrove or river_distance
+              pri_f30+ 
+              pri_b10+
+              MPA+
+              ecological_zone+
+              geomorphology+
+              municipality)
+
+
+
+# -----------------------------------------------------------
+fit_and_check <- function(formula, data, model_name, k = 5) {
+  
+  # 1. Fit logistic regression
+  model <- glm(formula, data = data, family = binomial(link=logit), 
+                                                       na.action = "na.fail")
+  
+  # 2. Pearson residuals
+  resid <- residuals(model, type = "pearson")
+  
+  # 3. Spatial neighbors (k-nearest)
+  coords <- as.matrix(data[, c("x", "y")])
+  nb <- knn2nb(knearneigh(coords, k = k))
+  lw <- nb2listw(nb, style = "W")
+  
+  # 4. Moran’s I test
+  moran_out <- lm.morantest(lm(resid ~ 1), lw)
+  
+  # 5. DHARMa test
+  dharma_res <- simulateResiduals(model)
+  dharma_spatial <- testSpatialAutocorrelation(dharma_res, x = data$x, y = data$y)
+  
+  # 6. Store results in a list with names
+  out <- list(
+    model = model,
+    resid = resid,
+    lw = lw,
+    moran = moran_out,
+    dharma = dharma_spatial
+  )
+  names(out) <- paste0(names(out), "_", model_name)
+  
+  return(out)
+}
+
+#---------------------------------------
+# Example 1: Full model m1
+#---------------------------------------
+m1_results <- fit_and_check(
+  formula = fxn1,
+  data = d1,
+  model_name = "m1",
+  k=8  # number of near neighbors
+)
+
+summary(m1_results$model_m1)
+Anova(m1_results$model_m1)
+m1_results$moran_m1
+m1_results$dharma_m1 # no spatial autocorrelation. same for 5 and 8 neighbors
+
+
+
+# check for outliers -------------------------------
+
+# ---------------------------------------------
+# OUTLIERS - all
+# ---------------------------------------------
+# table of residuals and IDs. use a cutoff of residuals ±1.96
+# https://stats.stackexchange.com/questions/196724/how-to-identify-outliers-and-do-model-diagnostics-for-an-lme4-model
+# https://stackoverflow.com/questions/24268031/unscale-and-uncenter-glmer-parameters?rq=1
+# ---------------------------------------------
+# view(cbind(residuals(m_all),d1$PtID2)) # outlier at point_id=1384
+m1<-m1_results$model_m1
+range(residuals(m1,type="pearson")) # pearson for GLM
+
+# ran this iteratively with m_all2 & d4
+outliers<-data.frame(cbind(residuals(m1,type="pearson"),d1$point_id))%>%
+  mutate(residuals=X1,
+         point_id=X2)%>%
+  dplyr::select(-X1,-X2)%>%
+  filter(abs(residuals)>2.5)%>%
+  # filter(residuals<(-2))%>% #removed 3 more
+  # filter(abs(residuals)>2)%>%
+  arrange(-abs(residuals))%>% 
+  glimpse()
+
+outliers
+outliers$point_id # 28 bigger than 2.5
+
+# point_id=147 590 636 119 579 819 856 745 694 190 708 807 105 721 709 238 125 442 685 658 712 675 772 781 661 451 371  14 # remove
+
+# look at spatially - many in NE
+outliers2<-outliers%>%
+  left_join(d1)%>%
+  glimpse()
+
+# plot outliers - all places with coral
+ggplot(outliers2,aes(x,y,color=as.factor(Reef_state),shape=geomorphology ))+geom_point()
+ggplot(outliers2,aes(x,y,color=Depth_m,size=residuals ))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+
+
+
+
+
+
+
+
+
+
+# -------------------------------------------------------
+# Stepwise backward selection (from m1)
+m2 <- dredge(m1_results$model_m1)
+
+# Check results again
+m2_results <- fit_and_check(
+  formula= m2,
+  data = d1,
+  model_name = "m2"
+)
+
+summary(m2_results$model_m2)
+m2_results$moran_m2
+m2_results$dharma_m2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#version1 - generalized linear model
+m1<-glm(fxn1, 
+            data=d1, 
+            family=binomial(link=logit), 
+            na.action = "na.fail")
+Anova(m1)
+summary(m1)
+
+# Then check residual spatial autocorrelation:
+# extract residuals from GLM
+resid_m1 <- residuals(m1, type = "pearson")
+
+
+
+
+
+
+# check for spatial autocorrelation -----------------------------------------
+# METHOD 1
+# morans I on residuals(spatial autocorrelation test for residuals) - but not great for glms - assumes linear residuals, so with GLM Pearson residuals it can over-detect autocorrelation
+# see thread: https://stat.ethz.ch/pipermail/r-sig-geo/2009-November/007034.html "While lm.morantest() can be used on glm output objects, no work has been done to establish whether this is a sensible idea." - Roger Bivand
+moran_res_m1 <- lm.morantest(lm(resid_m1 ~ 1), wts)
+print(moran_res_m1)
+
+# METHOD 2
+# simulations to check residual spatial autocorrelation
+#This uses permutations to check spatial structure in residuals and works even when distributional assumptions of lm.morantest are questionable. It is more robust for GLMs
+sim_res_m1 <- simulateResiduals(m1, n = 1000)
+
+# Test for spatial autocorrelation
+spatial_test_m1 <- testSpatialAutocorrelation(
+  sim_res_m1,
+  x = d1$x,
+  y = d1$y
+)
+print(spatial_test_m1)
+
+
+# autocorrelated using first method, but not second. going with second since that is a better method for this model structure -------------
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 m_all<-lme4::glmer(Reef_state ~ 
                      cs.(Depth_m) +
-                     # cs.(sg_minDist_100)+
-                     cs.(I(sg_minDist_100^2))+
-                     cs.(-SHAPE)+
-                     cs.(PopRskDecay.Nrm)+
+                     cs.(point_dist_Seagrass)+ 
+                     cs.(I(point_dist_Seagrass^2))+
+                     cs.(-patch_shape_index)+
+                     cs.(pop_risk_dens_orig)+ #pop_risk_dens_inhab
                      cs.(fYrLag30A)+
-                     cs.(cumulative_FA_blast10)+
-                     cs.(PopRskDecay.Nrm):cs.(fYrLag30A)+
-                     cs.(PopRskDecay.Nrm):cs.(cumulative_FA_blast10)+ 
+                     cs.(cumulative_blast10)+
+                     cs.(pop_risk_pop)+  # or point_dist_Mangrove or river_distance.nrm or river_distance
+                     cs.(pop_risk_dens_orig):cs.(fYrLag30A)+
+                     cs.(pop_risk_dens_orig):cs.(cumulative_blast10)+ 
                      MPA+
                      # Geomorphic2+
                      (1|ecological_zone), 
@@ -148,43 +396,7 @@ qqmath(m_all)
 qqmath(ranef(m_all))
 
 
-# ---------------------------------------------
-# OUTLIERS - all
-# ---------------------------------------------
-# table of residuals and IDs. use a cutoff of residuals ±1.96
-# https://stats.stackexchange.com/questions/196724/how-to-identify-outliers-and-do-model-diagnostics-for-an-lme4-model
-# https://stackoverflow.com/questions/24268031/unscale-and-uncenter-glmer-parameters?rq=1
-# ---------------------------------------------
-# view(cbind(residuals(m_all),d1$PtID2)) # outlier at PtID=1384
-range(residuals(m_all,type="deviance"))
 
-# ran this iteratively with m_all2 & d4
-outliers<-data.frame(cbind(residuals(m_all,type="deviance"),d1$PtID2))%>%
-  mutate(residuals=X1,
-          PtID2=X2)%>%
-  dplyr::select(-X1,-X2)%>%
-  filter(abs(residuals)>2.5)%>%
-  # filter(residuals<(-2))%>% #removed 3 more
-  # filter(abs(residuals)>2)%>%
-  arrange((residuals))%>% 
-  glimpse()
-
-outliers2<-outliers%>%
-  left_join(d1)%>%
-  glimpse()
-
-# plot outliers - all places with coral
-ggplot(outliers2,aes(x,y,color=as.factor(Reef_state),shape=Geomorphic2 ))+geom_point()
-ggplot(outliers2,aes(x,y,color=Depth_m,shape=MPA ))+geom_point()
-
-
-# remove large outliers --------------------------------------------------
-d4<-d1%>%
-  filter(PtID2!=131, PtID2!= 135, PtID2!= 127, PtID2!=1083, PtID2!= 1006, 
-         PtID2!= 966, PtID2!= 993, PtID2!=43,PtID2!=161,PtID2!=126 ,PtID2!=1146,PtID2!=4140
-         # , PtID2!=111, PtID2!=113, 
-         )%>%
-  glimpse()
   
 m_all2<-lme4::glmer(Reef_state ~ 
                       cs.(Depth_m) +

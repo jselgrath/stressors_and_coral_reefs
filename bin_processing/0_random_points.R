@@ -5,36 +5,45 @@
 
 # GOAL: set test and train points in focal area, not at Olango or Cabul-an
 
-#########################
+# -------------------------------------------
 library(tidyverse)
 library(dplyr)
 library(sf)
 library(spatstat.geom)
 library(spatstat.random)
 
-#########################
+# -------------------------------------------
+
+# -------------------------------------------
 remove(list=ls())
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
-########### 
-# import point data from GIS - 5003 random points, 100m apart min, in Coral Area only
-#https://www.nceas.ucsb.edu/scicomp/usecases/ReadWriteESRIShapeFiles
 
-# read in shapefile areas - this file is an intersection of co_ru_focal_areas_rs_lek_reclass_20250615_noOlango_noCabulan.shp, and the MPA shapefile, and the geomorphology shapefile done in ArcPro
-d0<-st_read("./gis/0_2025/random_points/stratified_area_for_random_pts2_20250830.shp")%>%
+# load files ------------------------------------------- 
+# --read in shapefile of focal area  ----------------------------------
+d0<-st_read("./gis2/focal_area/focal_area_sm.shp")%>%
   glimpse()
-plot(d0[7])
-# Id_binary = MPA (601) or not (602)
-# STATUS = not all MPA were legally designated - though it seems not relevant in the study area
 
-d1<-d0%>%
-  select(status=STATUS)%>%
-  filter(status!="Undesignated")%>% # remove because unclear status (very small area in center of Mahanay mangroves)
+#read in shapefile of habitat/resilience data & select coral & rubble only
+habitat<-st_read("./results/habitat.gpkg",layer="co_ru_fa_reclass2")%>%
+  glimpse() 
+
+unique(habitat$hab_reclass)
+
+# - MPA shapefile
+mpa<-st_read("./gis2/mpa/MPA_FA_20160525_3.shp")%>%
+  st_intersection(d0)%>% # clip to smaller area
+  filter(STATUS !="Undesignated")%>% # remove because unclear status (very small area in center of Mahanay mangroves)
+  dplyr::select(status=Id_binary,YearEst,Id_MEAT,Brgy)%>%
   glimpse()
-unique(d1$status)
-plot(d1)
 
+# plot(mpa)
+
+# intersect
+d1<-st_intersection(habitat,mpa)%>%
+  glimpse()
+# plot(d1)
 
 # chatcpt command: in R I have a sf polygon file called 'd1' and want to stratify by the column 'status' to create a shapefile of random points that are located inside the polygons and which provide a stratified random sample. The number of points in each strata should be relative to the area of the strata and the points should be a minimum of 250 m apart. before saving, return projection to WGS 84 / UTM zone 51N
 
@@ -47,31 +56,30 @@ st_crs(d1) # WGS 84 / UTM zone 51N
 # centered near the middle of the Visayas.
 crs_laea <- "+proj=laea +lat_0=10.5 +lon_0=123.5 +datum=WGS84 +units=m +no_defs"
 
-# change projection to equal area
-d1_proj <- st_transform(d1, crs_laea)
-
-
 # target projection (WGS84 / UTM zone 51N) - for saving at end ---
 crs_utm51 <- 32651   # EPSG code
 
 
-# Compute area by stratum ---------------------
-strata_area <- d1_proj %>%
+# change projection to equal area
+d1_proj <- st_transform(d1, crs_laea)
+
+# Compute area by status of MPAs to ensure samples in MPAs ---------------------
+status_area <- d1_proj %>%
   group_by(status) %>%
-  summarise(total_area = sum(st_area(geometry))) %>%
+  summarise(total_area = sum(st_area(geom))) %>%
   ungroup()
 
 # Total number of points you want ------------------------
-n_total <- 850 # 1000 and 900 do not fit
+n_total <- 900 # 1000 and 900 do not fit if do not include olango and cabul-an
 
 # minimum distance for points ------------------------
 min_dist = 250
 
 
 # Allocate points proportional to area -------------------
-strata_area <- strata_area %>%
+status_area2 <- status_area %>%
   mutate(n_points = round(as.numeric(total_area) / sum(as.numeric(total_area)) * n_total))
-glimpse(strata_area)
+glimpse(status_area2)
 
 
 
@@ -101,9 +109,9 @@ set.seed(123) # train
 # Loop over strata
 points_list_train <- list()
 
-for (i in 1:nrow(strata_area)) {
-  status_i <- strata_area$status[i]
-  n_i <- strata_area$n_points[i]
+for (i in 1:nrow(status_area2)) {
+  status_i <- status_area2$status[i]
+  n_i <- status_area2$n_points[i]
   polys_i <- d1_proj %>% filter(status == status_i) %>% st_union()
   
   pts_i <- sample_points_stratum(polys_i, n_i, min_dist)
@@ -111,20 +119,18 @@ for (i in 1:nrow(strata_area)) {
   points_list_train[[i]] <- pts_i
 }
 
-# Combine all points
-points_sf_train <- do.call(rbind, points_list_train)
 
 
 
-# TEST 
+# TEST --------------------------
 set.seed(789) # test
 
 # Loop over strata
 points_list_test <- list()
 
-for (i in 1:nrow(strata_area)) {
-  status_i <- strata_area$status[i]
-  n_i <- strata_area$n_points[i]
+for (i in 1:nrow(status_area2)) {
+  status_i <- status_area2$status[i]
+  n_i <- status_area2$n_points[i]
   polys_i <- d1_proj %>% filter(status == status_i) %>% st_union()
   
   pts_i <- sample_points_stratum(polys_i, n_i, min_dist)
@@ -133,9 +139,15 @@ for (i in 1:nrow(strata_area)) {
 }
 
 # Combine all points
+points_sf_train <- do.call(rbind, points_list_train)
+points_sf_train$point_id<-as.numeric(row.names(points_sf_train))
+points_sf_train<-points_sf_train%>%
+  dplyr::select(-status)
+
 points_sf_test <- do.call(rbind, points_list_test)
-
-
+points_sf_test$point_id<-as.numeric(row.names(points_sf_test))
+points_sf_test<-points_sf_test%>%
+  dplyr::select(-status)
 
 
 # --- Reproject sampled points back to UTM Zone 51N ---
@@ -153,5 +165,5 @@ st_write(points_utm51_te, paste0("./results_test/stratified_random_points_",n_to
 
 #geodatabases
 
-st_write(points_utm51_tr, "./results/train.gpkg",layer=paste0("stratified_random_points_",n_total,"pts_",min_dist,"m_train"), delete_layer = TRUE)
-st_write(points_utm51_te, "./results/test.gpkg",  layer=paste0("stratified_random_points_",n_total,"pts_",min_dist,"m_test"), delete_layer = TRUE)
+st_write(points_utm51_tr, "./results/basic_files.gpkg",layer=paste0("stratified_random_points_",n_total,"pts_",min_dist,"m_train"), delete_layer = TRUE)
+st_write(points_utm51_te, "./results/basic_files.gpkg",  layer=paste0("stratified_random_points_",n_total,"pts_",min_dist,"m_test"), delete_layer = TRUE)

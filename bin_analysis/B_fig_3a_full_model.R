@@ -15,13 +15,19 @@ library(ggtext)
 remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+<<<<<<< HEAD
 # setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
+=======
+
+setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+>>>>>>> dccb825c7ca13d77bb52f70083a49c37d003ea72
 
 # ------------------------------------------------------
 
 
 # load data ------------------
+<<<<<<< HEAD
 d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")%>%
   mutate(MPA=as.factor(MPA), 
          # Depth=Depth*-1,
@@ -30,6 +36,9 @@ d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")%>%
   glimpse()
 
 range(d5$Depth,na.rm=T)
+=======
+d5<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")
+>>>>>>> dccb825c7ca13d77bb52f70083a49c37d003ea72
 
 # load final model  ---------------
 load("./results_train/mixedEf_final_all.R")
@@ -39,12 +48,17 @@ load("./results_train/mixedEf_final_all.R")
 
 # http://www.talkstats.com/showthread.php/25420-Confidence-Interval-for-model-parameters-(in-R-lme4)
 summary(m_final)
+<<<<<<< HEAD
 tab_model (m_final, show.df = TRUE)
 get_model_data(m_final,type = c("est"))
+=======
+tab_model (m_final, show.df = TRUE) 
+>>>>>>> dccb825c7ca13d77bb52f70083a49c37d003ea72
 models<-list(m_final)
 models2<-c("m_final")
 models3<-c( "(a) Multi-year fishing, interaction")
 
+<<<<<<< HEAD
 # plots odds rations
 summary(m_final)
 plot_model(m_final, type = "est", vline.color = "lightgrey")  # Fixed effects # using sjPlot
@@ -71,6 +85,10 @@ visreg(m_final,"Blast_fishing_2010_2000","Ecological_zone", xlab="Blast_fishing_
 # random effects
 v <- visreg(m_final, "Depth", by="ecological_zone", re.form=~(1|"ecological_zone"), plot=FALSE)
 plot(v, ylab="Reef State")
+=======
+summary(m_final)
+plot_model(m_final, vline.color = "lightgrey") 
+>>>>>>> dccb825c7ca13d77bb52f70083a49c37d003ea72
 
 # run this before loop
 est<-data.frame()
