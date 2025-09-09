@@ -48,6 +48,7 @@ source("./bin_processing/00_pointJoin_IndpVarLandscape.R")
 # input: ./results/habitat.gpkg","habitat_all_db_reclass2
 # output: ./results/habitat.gpkg",layer="habitat_all_db_landscape1"
 
+
 # calculate landscape variables: distance from coral and rubble patches to seagrass and mangrove patches (edge to edge)
 source("./bin_processing/00_pointJoin_IndpVarLandscape2.R")
 # input:  ./results/habitat.gpkg",layer="habitat_all_db_landscape1"
@@ -84,6 +85,22 @@ source("./bin_processing/00_population_risk2.R")
 #         ./doc/population_risk_inhab_range.csv
 #         ./doc/population_risk_pop_range.csv
 
+# calculate normalized, cumulative, and lag fishing effort maps based on max values for the coral and rubble area only. 
+# cumulative and lag values use the normalized maps as input
+source("./bin_processing/00_calc_fishing_normalized_cumulative_lag.R")
+# input:   ./gis2/fishing/effort_fa","est_dayYr_all_.*\\.tif$
+#          ./gis2/fishing/effort_fa","est_dayYr_blast.*\\.tif$
+#          ./gis2/fishing/effort_fa","est_dayYr_poison.*\\.tif$
+#          ./results/habitat.gpkg",layer="co_ru_fa_reclass2"
+# 
+# output:  ./doc/fishing_all_max_all_yr_coralarea.csv - and blast and poison
+#          ./gis2/fishing/effort_fa_normalized/", layer_name, ".tif"
+#          ./gis2/fishing/effort_fa_cumulative/", layer_name, ".tif"
+#          ./gis2/fishing/effort_fa_lag/", layer_name, ".tif"
+#         
+#         
+#         
+
 
 # -- random points for analysis ----------------------------------------------------------
 
@@ -106,8 +123,8 @@ source("./bin_processing/0_random_points.R")
 # join points to coral/rubble data - now restricting analysis to focal area
 # ------------------------------------
 source("./bin_processing/1_pointJoin_resilience_train_test.R")
-# input:  ./results/train.gpkg, layer="stratified_random_points_900pts_250m_train"  # 850 if no olango area
-#         ./results/train.gpkg, layer="stratified_random_points_900pts_250m_test" 
+# input:  ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_train"  
+#         ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_test" 
 #         ./gis/resilience/RS_FocalArea_Updated_20160627b.shp
 #         ./gis/resilience/CoRu_Smplfd_20160628.shp
 # output: ./results/train.gpkg, layer="1_pts_habitat_tr"
@@ -115,13 +132,24 @@ source("./bin_processing/1_pointJoin_resilience_train_test.R")
 
 
 # ------------------------------------
-# join points with fishing effort data (all fishing) from decades
-# create normalized impact values for 
-#   - each year '.Nrm'
- #  - all years '.NrmA'
+# join points with fishing effort data from decades
+# for normalized, cumulative, and lag fishing data
+ #  - normalized by all years '.NrmA'
 # ------------------------------------
+sounce("./bin_processing/2_pointJoin_fishing_train_test.R")
+# output: ./results_train/2_pts_fishingeffort_1normalized.csv")
+#         ./results_test/2_pts_fishingeffort_1normalized.csv")
+#         ./results_train/2_pts_fishingeffort_2cumulative.csv")
+#         ./results_test/2_pts_fishingeffort_2cumulative.csv")
+#         ./results_train/2_pts_fishingeffort_3lag.csv")
+#         ./results_test/2_pts_fishingeffort_3lag.csv")
+
+
+
+
 source("./bin_processing/2_pointJoin_FishingAllYrs_1Norm_train_test.R")
-# input:      ./results/hab_Resil_Pts_RS.gpkg
+# input:  ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_train"  
+#         ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_test
 #             ./gis/coralrubble/CoralRubArea.shp
 #             ./fishing/EffortEstimates/YEAR
 # output:     ./results_train/2_pts_FishingYrs_1normalized.csv

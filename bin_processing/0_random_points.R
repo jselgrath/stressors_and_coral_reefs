@@ -69,11 +69,21 @@ status_area <- d1_proj %>%
   summarise(total_area = sum(st_area(geom))) %>%
   ungroup()
 
+
+
+
+
+
+# ----------------------------------------------------------------------------------
 # Total number of points you want ------------------------
-n_total <- 900 # 1000 and 900 do not fit if do not include olango and cabul-an
+n_total <- 1500 # 1000 does not fit with 250m distance if do not include olango and cabul-an
 
 # minimum distance for points ------------------------
-min_dist = 250
+min_dist = 100
+# ----------------------------------------------------------------------------------
+
+
+
 
 
 # Allocate points proportional to area -------------------

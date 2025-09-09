@@ -22,9 +22,10 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 d1<-st_read("./results/habitat.gpkg","habitat_all_db_reclass2")%>%
   glimpse()
-d1$hab_reclass[d1$hab_reclass=="Coral Reef Matrix"]<-"Coral"
+
 
 unique(d1$hab_reclass)
+plot(d1)
 
 # --projections ----------------------------------
 
@@ -119,8 +120,9 @@ d3a<- d3%>%
   mutate(patch_shape_index=round(as.numeric(shape_index),2),
          patch_area_m2=round(as.numeric(patch_area),2),
          patch_perimeter_m=round(as.numeric(patch_perimeter),2),
-        enn_m=round(as.numeric(nearest_same_hab_dist),2))%>%
-  select(-patch_area,-patch_perimeter,-nearest_same_hab_dist) 
+         patch_dist_to_coral_m=round(as.numeric(nearest_same_hab_dist),2))%>% # euclidian nearest neighbor
+  select(-patch_area,-patch_perimeter,-nearest_same_hab_dist,-shape_index) %>%
+  glimpse()
 
 # Inspect results
 head(d3)

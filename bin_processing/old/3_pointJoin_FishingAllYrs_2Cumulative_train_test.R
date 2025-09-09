@@ -28,14 +28,7 @@ d1_te<-read_csv("./results_test/2_pts_FishingYrs_1normalized.csv")%>%
 # train ------------------------------------
 # calculate cumulative impact from all fishing effort by adding normalized values across various subsets of gears
 d2<-mutate(d1,
-           # std by yearly max - other vars are better
-           # fYr00=all2010.nrm, 
-           # fYr10=all2010.nrm+all2000.nrm, 
-           # fYr20=all2010.nrm+all2000.nrm+all1990.nrm, 
-           # fYr30=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm, 
-           # fYr40=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm+all1970.nrm, 
-           # fYr50=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm+all1970.nrm+all1960.nrm,
-           
+
            # std by max for all years
            fYr00A=all2010.nrmA, 
            fYr10A=all2010.nrmA+all2000.nrmA, 
@@ -62,14 +55,7 @@ qplot(d2$fYrLag50A)
 # test -------------------------------------
 # calculate cumulative impact from all fishing effort by adding normalized values across various subsets of gears
 d2_te<-mutate(d1_te,
-           # std by yearly max - other vars are better
-           # fYr00=all2010.nrm, 
-           # fYr10=all2010.nrm+all2000.nrm, 
-           # fYr20=all2010.nrm+all2000.nrm+all1990.nrm, 
-           # fYr30=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm, 
-           # fYr40=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm+all1970.nrm, 
-           # fYr50=all2010.nrm+all2000.nrm+all1990.nrm+all1980.nrm+all1970.nrm+all1960.nrm,
-           
+
            # std by max for all years
            fYr00A=all2010.nrmA, 
            fYr10A=all2010.nrmA+all2000.nrmA, 
@@ -92,6 +78,8 @@ head(d2_te)
 qplot(d2_te$fYr50A)
 qplot(d2_te$fYrLag50A)
 
-#export table
+
+
+#save --------------------
 write_csv(d2,   "./results_train/3_pts_FishingYrs_cumulative.csv")
 write_csv(d2_te,"./results_test/3_pts_FishingYrs_cumulative.csv")

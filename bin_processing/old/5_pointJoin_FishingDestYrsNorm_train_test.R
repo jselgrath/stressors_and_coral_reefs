@@ -10,9 +10,9 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 # -------------------------------------------
 #random points
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
   glimpse()
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
 
 #read in file of coral/rubble area only
@@ -69,19 +69,21 @@ mx.dest<-max(mx$max)
 #Extract Raster Variables to Point Data
 
 # test ----
-d1<-stars::st_as_stars(s2)%>%
+d1<-stars::st_as_stars(s)%>%
   stars::st_extract(pts)%>% # extract raster values at points
   st_as_sf()%>% # transform back to sf
   st_join(pts)%>% # join to point data
   tibble()%>%
+  dplyr::select(-geom)%>%
   glimpse()
 
 # train ----
-d1_te<-stars::st_as_stars(s2)%>%
+d1_te<-stars::st_as_stars(s)%>%
   stars::st_extract(pts_te)%>% # extract raster values at points
   st_as_sf()%>% # transform back to sf
   st_join(pts_te)%>% # join to point data
   tibble()%>%
+  dplyr::select(-geom)%>%
   glimpse()
 
 # -------------------------------------------

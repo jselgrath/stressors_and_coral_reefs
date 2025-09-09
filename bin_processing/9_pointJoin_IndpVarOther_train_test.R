@@ -27,12 +27,11 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 # -------------------------------------------
 #read in gpkg layer of random points 
 # train --
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
   glimpse()
-# test --
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+#test
+pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
-
 ############################
 # Task 1.2 load shapefiles with indp data 
 
@@ -135,7 +134,7 @@ v4p_te <- pts_te%>%
 v5<-st_read("./gis2/municipal_waters/municipal_waters.shp")%>%
   glimpse()
 
-plot(v5)
+# plot(v5)
 
 # extract polygon data to points
 # train --
@@ -201,7 +200,7 @@ pts3_te<-pts_te%>%
   full_join(v3p_te)%>%
   full_join(v4p_te)%>%
   full_join(v5p_te)%>%
-  full_join(v6p)%>%
+  full_join(v6p_te)%>%
   glimpse()
 str(pts3_te)
 

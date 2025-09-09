@@ -3,7 +3,7 @@
 # Multiple Stressors and Coral Reefs (Ch5)
 # --------------------------------------------
 
-# GOAL: Normalize fishing effort estimates from all years and extract to points
+# GOAL: Normalize fishing effort estimates from all years IN CORAL AND RUBBLE AREAS ONLY and extract to points
 # -------------------------------------------
 library(stars)
 library(ggplot2)
@@ -18,9 +18,9 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 # -------------------------------------------
 #read in random points
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
   glimpse()
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
 
 #read in file of coral/rubble area only
@@ -54,13 +54,14 @@ names(s) = new_names
 plot(s[[1]]) # effort 1960
 str(s[[1]])
 
-# Mask rasters so only evaluating fishing effort in coral areas
+# Mask rasters so only evaluating max fishing effort in coral areas
 s2<-mask(s, CA) 
 str(s2)
 
 # plot(s[[1]])
-# plot(s2[[1]])
+plot(s2[[1]])
 
+# ---------------------------------------------------------
 # Calculate max for each year for Coral and Rubble Area only
 mx<-tibble()
 for (i in 1:6){
@@ -80,28 +81,30 @@ glimpse(mx)
 # max for all years
 mx.all<-max(mx$max)
 
-write_csv(mx,"./doc/all_fishing_max_all_yr_train.csv")
+write_csv(mx,"./doc/all_fishing_max_all_yr_coralarea.csv")
 
 ###########################################
 #Extract Raster Variables to Point Data
-d1<-stars::st_as_stars(s2)%>%
+d1<-stars::st_as_stars(s)%>%
   stars::st_extract(pts)%>% # extract raster values at points
   st_as_sf()%>% # transform back to sf
   st_join(pts)%>% # join to point data
   tibble()%>%
+  dplyr::select(-geom)%>%
   glimpse()
 
-plot(d1[[1]])
+# plot(d1[[1]])
 
 # test
-d1_te<-stars::st_as_stars(s2)%>%
+d1_te<-stars::st_as_stars(s)%>%
   stars::st_extract(pts_te)%>% # extract raster values at points
   st_as_sf()%>% # transform back to sf
   st_join(pts_te)%>% # join to point data
   tibble()%>%
+  dplyr::select(-geom)%>%
   glimpse()
 
-plot(d1_te[[1]])
+# plot(d1_te[[1]])
 
 
 ##########################
@@ -110,15 +113,8 @@ plot(d1_te[[1]])
 
 # TRAIN -----------------------------------------------------------------
 d2<-d1
-######## these ones are normalized by the year they were in ########### - other version is better
-# d2$all1960.nrm=d2$all1960/mx[1,2]
-# d2$all1970.nrm=d2$all1970/mx[2,2]
-# d2$all1980.nrm=d2$all1980/mx[3,2]
-# d2$all1990.nrm=d2$all1990/mx[4,2]
-# d2$all2000.nrm=d2$all2000/mx[5,2]
-# d2$all2010.nrm=d2$all2010/mx[6,2]
 
-######## these ones are normalized by all years ###########
+######## normalized by all years ###########
 d2$all1960.nrmA=d2$all1960/mx.all
 d2$all1970.nrmA=d2$all1970/mx.all
 d2$all1980.nrmA=d2$all1980/mx.all
@@ -130,15 +126,8 @@ d2$all2010.nrmA=d2$all2010/mx.all
 
 # TEST -----------------------------------------------------------------
 d2_te<-d1_te
-######## these ones are normalized by the year they were in ###########  - other version is better
-# d2_te$all1960.nrm=d2_te$all1960/mx[1,2]
-# d2_te$all1970.nrm=d2_te$all1970/mx[2,2]
-# d2_te$all1980.nrm=d2_te$all1980/mx[3,2]
-# d2_te$all1990.nrm=d2_te$all1990/mx[4,2]
-# d2_te$all2000.nrm=d2_te$all2000/mx[5,2]
-# d2_te$all2010.nrm=d2_te$all2010/mx[6,2]
 
-######## these ones are normalized by all years ###########
+######## normalized by all years ###########
 d2_te$all1960.nrmA=d2_te$all1960/mx.all
 d2_te$all1970.nrmA=d2_te$all1970/mx.all
 d2_te$all1980.nrmA=d2_te$all1980/mx.all

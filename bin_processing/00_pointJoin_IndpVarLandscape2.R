@@ -87,8 +87,8 @@ calc_target_distances <- function(sf_obj, hab_col = "hab_reclass",
   }
   
   # compute distances
-  sources$dist_to_seagrass_m <- round(set_units(nearest_dist(sources, tgt1), "m"),2)
-  sources$dist_to_mangrove_m <- round(set_units(nearest_dist(sources, tgt2), "m"),2)
+  sources$patch_dist_to_seagrass_m <- round(set_units(nearest_dist(sources, tgt1), "m"),2)
+  sources$patch_dist_to_mangrove_m <- round(set_units(nearest_dist(sources, tgt2), "m"),2)
   
   return(sources)
 }
@@ -117,6 +117,14 @@ d3
 
 
 
+# d4<-d3%>%
+#   dplyr::select(hab_reclass:patch_perimeter_m,patch_dist_to_coral_m=enn_m, patch_dist_to_seagrass_m=dist_to_seagrass_m,patch_dist_to_mangrove_m=dist_to_mangrove_m)%>%
+#   select(-shape_index)%>%
+#   glimpse()
+  
+
+
+
 # Save to shapefile
-st_write(d3, "./gis2/landscape/habitat_all_db_landscape2.shp", delete_layer = TRUE)
-st_write(d3,"./results/habitat.gpkg",layer="habitat_all_db_landscape2", delete_layer = TRUE)
+st_write(d4, "./gis2/landscape/habitat_all_db_landscape2.shp", delete_layer = TRUE)
+st_write(d4,"./results/habitat.gpkg",layer="habitat_all_db_landscape2", delete_layer = TRUE)

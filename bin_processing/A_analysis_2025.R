@@ -3,35 +3,81 @@
 # Multiple Stressors and Coral Reefs (Ch5)
 # --------------------------------------------
 
+
+# --------------------------------------------
 # GOAL: Code to analyze the relationship between coral (Coral (1) vs. rubble (0)) and various threats and biophysical parameters.
+# --------------------------------------------
 
-# Mixed Effects Models
-# Using forward stepping model because full model with all variables would not converge
-# model with 1 random effect
 
-# maybe want to remove NAs - check which variables have NAs because loose ~280 points
-# remove nas
+# --------------------------------------------
+# -- Some Resources --
 
 # https://crd230.github.io/lab8.html
 # https://rpubs.com/corey_sparks/111362
 #https://stat.ethz.ch/pipermail/r-sig-geo/2009-November/007034.html
 
+# Plant: Spatial Data analysis in Ecology and Agriculture using R (2nd ed)
+# Penguin Book
+# gelman and hill
+
+
+# ------------------------------------------------
+# overview of methods for near neighbor list  --
+
+# OPTION1 -----------
+# knearneigh = number of neighbors. # k = 5 means: for each point, find the 5 nearest neighbors
+# knearneigh gives you a nearest-neighbor structure (which is not yet a full neighbor list)
+# knn2nb() Converts the nearest-neighbor object from knearneigh() into an nb object (neighbor list) that can be used in spatial weights (nb2listw()
+# If you want one fully connected graph (since there are subgraphs), switch to dnearneigh() with a radius chosen to cover the gaps.
+
+# nb <- knn2nb(knearneigh(coords, k = 5)) # 5 nearest neighbors # Warning: "neighbour object has 3 sub-graphs" - points form disconnected groups (clusters), so some parts of the neighbor graph are not connected to others. Here probably the three ecological zones → so you get multiple "sub-graphs". It’s not necessarily an error — it’s telling you the spatial graph is not fully connected.Moran’s I still works, but it’s applied within those sub-graphs.
+
+# OPTION2 ------------
+# dnearneigh = distance based near neighbors d1 = closest, d2 = furtherst in meters (if projected. if not projected in km)
+
+# nb <- dnearneigh(coords, d1=0,d2=1000) #warning: neighbour object has 9 sub-graphs
+
+
+
+
+# ------------------------------------------------
+# Overview of spatial autocorrelation tests:
+# METHOD 1
+# morans I on residuals(spatial autocorrelation test for residuals) - but not great for glms - assumes linear residuals, so with GLM Pearson residuals it can over-detect autocorrelation
+# see thread: https://stat.ethz.ch/pipermail/r-sig-geo/2009-November/007034.html "While lm.morantest() can be used on glm output objects, no work has been done to establish whether this is a sensible idea." - Roger Bivand
+
+# Pearson residuals
+# r1 <- residuals(m1, type = "pearson")
+
+# test
+# lm.morantest(lm(residuals ~ 1), wts) # wts from neighbor list above
+
+
+# METHOD 2
+# simulations to check residual spatial autocorrelation
+#This uses permutations to check spatial structure in residuals and works even when distributional assumptions of lm.morantest are questionable. It is more robust for GLMs
+# sim_res_m1 <- simulateResiduals(m1, n = 1000)
+
+# Test for spatial autocorrelation
+# testSpatialAutocorrelation(
+#   sim_res_m1,
+#   x = d1$x,
+#   y = d1$y
+# )
+
+
+
 
 # ----------------------------------------------------------------
 library(tidyverse)
 library(ggplot2)
-library(lme4)
-library(lattice)
-library(boot)
 library(car)
 library(MuMIn)
 library(DHARMa)# residual diagnostics for heirarchical regression models
 library(colorspace)
-library(visreg)
-library(glmmTMB) #allows a binomial GLMM with spatial correlation structure
 library(spdep)
-library(MASS)   # for stepAIC
-
+library(lattice)
+library(adespatial)
 
 
 # -------------------------------------------
@@ -43,40 +89,63 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 
 # ---------------------------------------------
-# load data 
+# load data and organize variables
 # ---------------------------------------------
 d0<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>%
   
-  # adjusting depth
-  mutate(Depth_m=if_else(Depth_m>-135,Depth_m,-15))%>% #~8 deep outliers - probably misclassified in depth map. 8 at 15m slightly more at 12
-  mutate(Depth_m=if_else(Depth_m<0,Depth_m,-.1))%>% # one value above water - also misclassified
+  #set fishing =NA to 0
   
-  mutate(MPA=as.factor(MPA), 
+  # adjusting depth
+  mutate(Depth_m=if_else(Depth_m<0,Depth_m,-.1), # one value above water 
+  
+  # made depth positive for easier interpretation
+  Depth_m=Depth_m*-1)%>%  
+  
+  # make factors
+  mutate(MPA=as.factor(mpa), 
          ecological_zone=as.factor(ecological_zone),
-         Depth_m=Depth_m*-1,
-         # Reef_state=as.factor(Reef_state),
-         geomorphology=as.factor(geomorphology))%>%
+         geomorphology=as.factor(geomorphology),
+         Reef_state=resilience_id
+         )%>%
   glimpse()
 
-d1<-data.frame(na.omit(d0))# 13 NAs - all in population risk variables
 
-d1%>%filter(point_id==371)%>% glimpse()  # 636
-
-d1$Depth_m[d1$point_id==856]<-5  # outlier depth is wrong
-d1$Depth_m[d1$point_id==371]<-2
 
 # check depth representation # ---------------------------------------------
-range(d1$Depth_m)
+range(d0$Depth_m)
 
 # graph of depth
-with(d1,xyplot(Reef_state~Depth_m|ecological_zone,type=c('g','p','l'),
+with(d0,xyplot(Reef_state~Depth_m|ecological_zone,type=c('g','p','l'),
                layout=c(4,1), index.cond = function(x,y)max(y)))
 
-# blast fishing in deep water
+# blast fishing in deep water - using to check for high blast fishing in shallow areas
 
-d1%>%
+d0%>%
   filter(Depth_m>12)%>%
-  ggplot(aes(x,y,color=Depth_m,size=cumulative_blast10 ))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+  ggplot(aes(x,y,color=Depth_m,size=cumulative_blast_10))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2) #- one deep area is an atoll. fixed below
+
+
+# correct outlier depth
+d0%>%filter(point_id==371)%>% glimpse()  # outlier
+d0$Depth_m[d0$point_id==371]<-5 # too shallow 
+
+d0%>%filter(point_id==815)%>% glimpse()  # outlier
+d0$Depth_m[d0$point_id==815]<-5 # atoll that the depth modeling missed 
+
+
+ 
+# remove NAs and make extreme depths shallower  
+d1<-d0%>%
+  # make extreme depth shallower - assuming spline errors
+  mutate(Depth_m=if_else(Depth_m>-15,Depth_m,-15)) #~8 deep outliers - probably misclassified in depth map. 8 at 15m slightly more at 12
+d1<-data.frame(na.omit(d1))# 13 NAs -  in population risk variables 
+
+
+
+
+
+
+
 
 # ---------------------------------------------
 # centering variables based on mean
@@ -97,24 +166,27 @@ d1$mg<-as.numeric(cs. (d1$point_dist_Mangrove))
 d1$psi<-as.numeric(cs. (d1$patch_shape_index))
 d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))
-d1$fishing_30lag<-as.numeric(cs. (d1$fYrLag30A))
-d1$blast10<-as.numeric(cs. (d1$cumulative_blast10))
+d1$fishing_30lag<-as.numeric(cs. (d1$lag_all_30))
+d1$blast10<-as.numeric(cs. (d1$cumulative_blast_10))
+d1$poison10<-as.numeric(cs. (d1$cumulative_poison_10))
 d1$pr<-as.numeric(cs. (d1$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
 
+
+# ---------------------------------------------
+# precompute interactions
+# ---------------------------------------------
 # precompute
 d1$sg2<-d1$sg^2
 d1$pri_f30<-d1$pr_inhab*d1$fishing_30lag
 d1$pri_b10<-d1$pr_inhab*d1$blast10
 
 glimpse(d1)
+
+
+
 # ---------------------------------------------
-# FULL MODEL - log variables it is not sig dif using Anova, so removing
-# ---------------------------------------------
-
-
-
 # build spatial matrix of coordaiates and neighbors list -------------------------------
-
+# ---------------------------------------------
 # matrix of coordinates of sample locations projected into meters for distance
 coords<-as.matrix(d1[, c("x", "y")])
 
@@ -128,88 +200,192 @@ coords<-as.matrix(d1[, c("x", "y")])
 
 nb <- knn2nb(knearneigh(coords, k = 5)) # 5 nearest neighbors # Warning: "neighbour object has 3 sub-graphs" - points form disconnected groups (clusters), so some parts of the neighbor graph are not connected to others. Here probably the three ecological zones → so you get multiple "sub-graphs". It’s not necessarily an error — it’s telling you the spatial graph is not fully connected.Moran’s I still works, but it’s applied within those sub-graphs.
 
-# OPTION2 ------------
-# dnearneigh = distance based near neighbors d1 = closest, d2 = furtherst in meters (if projected. if not projected in km)
-
-# nb <- dnearneigh(coords, d1=0,d2=1000) #warning: neighbour object has 9 sub-graphs
-
-
 
 # Convert to spatial weights
 wts <- nb2listw(nb, style = "W") # assigns weights, creates listw object (Plant p93)
 
 
 
+
+# -----------------------------------------------------
+# function for testing spaitial autocorrelation using simulations
+# -----------------------------------------------------
+# note I originally ran both and MoransI was significant, but Moran's I is less accurate for glm so not using further
+f_sp_autocor <- function(data,model) {
+  
+  # Pearson residuals
+  resid <- residuals(model, type = "pearson")
+
+  # DHARMa test
+  dharma_res <- simulateResiduals(model)
+  dharma_spatial <- testSpatialAutocorrelation(dharma_res, x = data$x, y = data$y) # tests for spatial autocorrelation in the residuals
+
+  
+  return(dharma_spatial)
+}
+# ---------------------------------------------
+
+
+# ---------------------------------------------
+# ---------------------------------------------
+# FULL MODEL 
+# ---------------------------------------------
+
 # base function # ---------------------------
 fxn1<-as.formula(Reef_state ~ 
               depth+
               sg+
-              sg2+
-              mg+
+              I(sg^2)+# sg2+
               psi+
-              # pr_orig+
               pr_inhab+
+              pr+ # OR point_dist_Mangrove or river_distance
+              # mg+
+              # river_distance+
               fishing_30lag+
               blast10+
-              # pr+ # OR point_dist_Mangrove or river_distance
-              pri_f30+ 
-              pri_b10+
+              poison10+
+              I(pr_inhab*fishing_30lag)+
+              I(pr_inhab*blast10)+
+              I(pr_inhab*pr)+
               MPA+
               ecological_zone+
-              geomorphology+
-              municipality)
+              geomorphology)
 
 
 
-# -----------------------------------------------------------
-fit_and_check <- function(formula, data, model_name, k = 5) {
-  
-  # 1. Fit logistic regression
-  model <- glm(formula, data = data, family = binomial(link=logit), 
-                                                       na.action = "na.fail")
-  
-  # 2. Pearson residuals
-  resid <- residuals(model, type = "pearson")
-  
-  # 3. Spatial neighbors (k-nearest)
-  coords <- as.matrix(data[, c("x", "y")])
-  nb <- knn2nb(knearneigh(coords, k = k))
-  lw <- nb2listw(nb, style = "W")
-  
-  # 4. Moran’s I test
-  moran_out <- lm.morantest(lm(resid ~ 1), lw)
-  
-  # 5. DHARMa test
-  dharma_res <- simulateResiduals(model)
-  dharma_spatial <- testSpatialAutocorrelation(dharma_res, x = data$x, y = data$y)
-  
-  # 6. Store results in a list with names
-  out <- list(
-    model = model,
-    resid = resid,
-    lw = lw,
-    moran = moran_out,
-    dharma = dharma_spatial
-  )
-  names(out) <- paste0(names(out), "_", model_name)
-  
-  return(out)
-}
+#Fit logistic regression# -----------------------------------------------------------
+m1<-glm(fxn1, 
+        data=d1, 
+        family=binomial(link=logit), 
+        na.action = "na.fail")        # required by dredge
+Anova(m1)
+summary(m1)
+
+
+
+# check for spatial autocorrelation -----------------------------------------
+m1_sac<-f_sp_autocor(data=d1,model=m1);m1_sac
+
+
+# -----------------------------------------------------------------------------
+
+
+
+
+#----------------------------------------
+# Dredge to find best model #-------------
+#----------------------------------------
+d1_dredge <- dredge(m1, rank = "AIC") # or AICc, but unlikely small sample size issue
+
+# Best model
+m2 <- get.models(d1_dredge, subset = 1)[[1]]
+summary(m2)
+
+# Residual check for best dredge model
+m2_results <- glm(formula(m2), data=d1, 
+                  family=binomial(link=logit), 
+                  na.action = "na.fail")
+
+summary(m2_results)
+Anova(m2_results)
+
+# inspect top models
+head(m2, 10)
+
+
+# Autocorrelation of top dredge model -------------------
+m2_sac<-f_sp_autocor(data=d1,model=m2);m2_sac
+
+# family = binomial, the coefficients are on the log-odds scale. exponentiate them to get odds ratios:
+exp(coef(m_avg))
+
+# -----------------------------------
+# model averaging
+
+m_avg <- model.avg(d1_dredge, subset = delta < 2)
+summary(m_avg)
+importance(m_avg)
+
+# exponate coefficents
+ec_m1<-exp(coef(m_avg))
+
+ec_sac<-f_sp_autocor(data=d1,model=m_avg)
+
+# output from model averaging ------------------------------------
+# df = number of estimated parameters
+# logLik = log-likelihood of the model
+# AICc = corrected Akaike Information Criterion
+# ΔAICc = difference from the best model
+# weight = model weight (relative support, adds to 1 across models)
+# When you run model.avg(), you’re telling R: don’t pick just one — combine them proportionally to their weights.
+
+# Estimate = the model-averaged regression coefficient.
+# If a variable only appears in some models, its coefficient is “shrinked” toward 0 depending on how often it appears.
+# SE = unconditional standard error of the estimate.
+# Adjusted SE = accounts for model selection uncertainty.
+# z value and Pr(>|z|) = significance test, similar to glm summary.
+
+# Full average if your goal is prediction (because it incorporates model selection uncertainty).
+# Conditional average if your goal is inference about effect sizes (assuming the variable is “really in” the model).
+# Burnham & Anderson 2004 recommend reporting both the importance and full-average estimates for transparency.
+
+
+
+
+
+
 
 #---------------------------------------
 # Example 1: Full model m1
 #---------------------------------------
-m1_results <- fit_and_check(
-  formula = fxn1,
-  data = d1,
-  model_name = "m1",
-  k=8  # number of near neighbors
-)
+#----------------------------------------
+# Step 1: Full model m1
+#----------------------------------------
+m1_results <- fit_and_check(fxn1, d1, "m1")
 
 summary(m1_results$model_m1)
-Anova(m1_results$model_m1)
 m1_results$moran_m1
-m1_results$dharma_m1 # no spatial autocorrelation. same for 5 and 8 neighbors
+m1_results$dharma_m1
+
+#----------------------------------------
+# Step 2: Dredge to find best model
+#----------------------------------------
+m1<-m1_results$model_m1
+d1_dredge <- dredge(m1, rank = "AIC")
+
+# Best model = m2
+m2 <- get.models(d1_dredge, subset = 1)[[1]]
+
+# Residual check for best dredge model
+m2_results <- fit_and_check(formula(m2), d1, "m2")
+
+summary(m2_results$model_m2)
+m2_results$moran_m2
+m2_results$dharma_m2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -261,91 +437,9 @@ ggplot(outliers2,aes(x,y,color=Depth_m,size=residuals ))+geom_point()+geom_label
 
 
 
-# -------------------------------------------------------
-# Stepwise backward selection (from m1)
-m2 <- dredge(m1_results$model_m1)
-
-# Check results again
-m2_results <- fit_and_check(
-  formula= m2,
-  data = d1,
-  model_name = "m2"
-)
-
-summary(m2_results$model_m2)
-m2_results$moran_m2
-m2_results$dharma_m2
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#version1 - generalized linear model
-m1<-glm(fxn1, 
-            data=d1, 
-            family=binomial(link=logit), 
-            na.action = "na.fail")
-Anova(m1)
-summary(m1)
-
-# Then check residual spatial autocorrelation:
-# extract residuals from GLM
-resid_m1 <- residuals(m1, type = "pearson")
-
-
-
-
-
-
-# check for spatial autocorrelation -----------------------------------------
-# METHOD 1
-# morans I on residuals(spatial autocorrelation test for residuals) - but not great for glms - assumes linear residuals, so with GLM Pearson residuals it can over-detect autocorrelation
-# see thread: https://stat.ethz.ch/pipermail/r-sig-geo/2009-November/007034.html "While lm.morantest() can be used on glm output objects, no work has been done to establish whether this is a sensible idea." - Roger Bivand
-moran_res_m1 <- lm.morantest(lm(resid_m1 ~ 1), wts)
-print(moran_res_m1)
-
-# METHOD 2
-# simulations to check residual spatial autocorrelation
-#This uses permutations to check spatial structure in residuals and works even when distributional assumptions of lm.morantest are questionable. It is more robust for GLMs
-sim_res_m1 <- simulateResiduals(m1, n = 1000)
-
-# Test for spatial autocorrelation
-spatial_test_m1 <- testSpatialAutocorrelation(
-  sim_res_m1,
-  x = d1$x,
-  y = d1$y
-)
-print(spatial_test_m1)
-
-
-# autocorrelated using first method, but not second. going with second since that is a better method for this model structure -------------
-# -----------------------------------------------------------------------------
 
 
 
@@ -374,11 +468,11 @@ m_all<-lme4::glmer(Reef_state ~
                      cs.(I(point_dist_Seagrass^2))+
                      cs.(-patch_shape_index)+
                      cs.(pop_risk_dens_orig)+ #pop_risk_dens_inhab
-                     cs.(fYrLag30A)+
-                     cs.(cumulative_blast10)+
+                     cs.(lag_all_30)+
+                     cs.(cumulative_blast_10)+
                      cs.(pop_risk_pop)+  # or point_dist_Mangrove or river_distance.nrm or river_distance
-                     cs.(pop_risk_dens_orig):cs.(fYrLag30A)+
-                     cs.(pop_risk_dens_orig):cs.(cumulative_blast10)+ 
+                     cs.(pop_risk_dens_orig):cs.(lag_all_30)+
+                     cs.(pop_risk_dens_orig):cs.(cumulative_blast_10)+ 
                      MPA+
                      # Geomorphic2+
                      (1|ecological_zone), 
@@ -404,9 +498,9 @@ m_all2<-lme4::glmer(Reef_state ~
                       cs.(I(sg_minDist_100^2))+
                       cs.(-SHAPE)+
                       cs.(PopRskDecay.Nrm)+
-                      cs.(fYrLag30A)+
+                      cs.(lag_all_30)+
                       cs.(cumulative_FA_blast10)+
-                      cs.(PopRskDecay.Nrm):cs.(fYrLag30A)+
+                      cs.(PopRskDecay.Nrm):cs.(lag_all_30)+
                       cs.(PopRskDecay.Nrm):cs.(cumulative_FA_blast10)+ 
                       MPA+
                       # Geomorphic2+
@@ -417,7 +511,7 @@ summary(m_all2)
 Anova(m_all2)
 tab_model(m_all2, show.df = TRUE) 
 plot_model(m_all2, vline.color = "lightgrey") 
-qqmath(m_all2) 
+
 
 # ---------------------------------------------
 # check model - all
@@ -503,7 +597,7 @@ plot(simulationOutput) # By default, plotResiduals plots against predicted value
 plotResiduals(simulationOutput, form = cs.(d_fitted$Depth_m))
 plotResiduals(simulationOutput, form = cs.(d_fitted$sg_minDist_100)) # not normal - maybe over dispersed?
 plotResiduals(simulationOutput, form = cs.(d_fitted$PopRskDecay.Nrm))
-plotResiduals(simulationOutput, form = cs.(d_fitted$fYrLag30A))
+plotResiduals(simulationOutput, form = cs.(d_fitted$lag_all_30))
 plotResiduals(simulationOutput, form = cs.(d_fitted$cumulative_FA_blast10)) # not normal - maybe over dispersed?
 # plotResiduals(simulationOutput, form = cs.(log(d_fitted$CoRuEdg2Area+1)))
 # against factors
@@ -545,7 +639,7 @@ d5<-d4%>%
          # Patch_complexity=cs.(SHAPE)[,1],
          Patch_compactness=cs.(-SHAPE)[,1],
          Population_risk=cs.(PopRskDecay.Nrm)[,1],
-         Fishing_legacy_1980_2000=cs.(fYrLag30A)[,1],
+         Fishing_legacy_1980_2000=cs.(lag_all_30)[,1],
          Blast_fishing_2010_2000=cs.(cumulative_FA_blast10)[,1])%>%
   dplyr::select(
     Reef_state,Depth, Seagrass_isolation,Patch_compactness,Population_risk,

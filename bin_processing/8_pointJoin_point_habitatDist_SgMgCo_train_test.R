@@ -25,17 +25,16 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 # -------------------------------------------
 #read in gpkg layer of random points 
 # train --
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
   glimpse()
-# test --
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
 
 
 
 #----------------------------------------------
 # load habitat patches of habitats
-d1<-st_read("./results/habitat.gpkg",layer="habitat_all_db_reclass2")%>%
+d1<-st_read("./results/habitat.gpkg",layer="habitat_all_db_reclass2" )%>% 
   glimpse()
 
 # plot(d1[1])
@@ -104,8 +103,8 @@ d3t<-tibble(d3)%>%
   dplyr::select(-geom)
 
 # save --------------------------
-st_write(d2,"./results/train.gpkg", layer="8_pts_landscape_edge_dist")
-st_write(d3,"./results/test.gpkg",  layer="8_pts_landscape_edge_dist")
+st_write(d2,"./results/train.gpkg", layer="8_pts_landscape_edge_dist", delete_layer = TRUE)
+st_write(d3,"./results/test.gpkg",  layer="8_pts_landscape_edge_dist", delete_layer = TRUE)
 
 write_csv(d2t,"./results_train/8_pts_landscape_edge_dist.csv")
 write_csv(d3t,"./results_test/8_pts_landscape_edge_dist.csv")

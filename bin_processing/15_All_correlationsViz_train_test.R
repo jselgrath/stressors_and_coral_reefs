@@ -18,15 +18,35 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # -------------------------------------------
 
 # load data #
-d1<-read_csv("./results_train/14_IndpVar_Pts_train.csv")%>%
-  glimpse()
-d1_te<-read_csv("./results_test/14_IndpVar_Pts_test.csv")%>%
+d0<-read_csv("./results_train/14_IndpVar_Pts_train.csv")%>%
   glimpse()
 
-########################
-# Correlations between variables
+d0_te<-read_csv("./results_test/14_IndpVar_Pts_test.csv")%>%
+  glimpse()
+
+# 249 is NA for both
+is.na(d0$cumulative_all_00)
+is.na(d0$all_2010_nrmA)
+
+# about 3 NAs
+is.na(d0$pop_risk_dens_orig)
+is.na(d0$pop_risk_dens_inhab)
+
+# drop NAs -------------------------
+d1<-d0%>%
+  na.omit()%>% # loose ~ 12 points
+  glimpse()
+
+d1_te<-d0_te%>%
+  na.omit()%>% # loose ~ 15 points
+  glimpse()
+
+
+
+# -- Correlations between variables ----------------------------------
 cor(d1$point_dist_Seagrass,d1$point_dist_Mangrove)
-cor(d1$pop_risk_dens_orig,d1$pop_risk_dens_inhab) 
+cor(d1$pop_risk_dens_orig,d1$pop_risk_dens_inhab) # high
+cor(d1$cumulative_all_00,d1$all_2010_nrmA) # same
 
 
 #  pop risk variables -----------------
@@ -37,23 +57,24 @@ d.f<-d1%>%
 dfcor<-round(cor(d.f, use="complete"),2)
 corrplot(dfcor, method="number", type = "lower")
 corrplot(dfcor)
+corrplot(dfcor, method="number", type = "lower")
 
-# pop and pop_risk_inhabited cor at 0.5
+# pop and pop_risk_inhabited cor at 0.59, others high
 
 
 # landscape
 d.f2<-d1%>%
-  dplyr::select(patch_shape_index:point_dist_Mangrove,river_distance.nrm )
+  dplyr::select(patch_shape_index,patch_dist_to_coral_m:point_dist_Mangrove,river_distance.nrm)
 dfcor2<-round(cor(d.f2, use="complete"),2)
 corrplot(dfcor2, method="number", type = "lower")
 corrplot(dfcor2)
-# patch and point metrics are correlated, patch area metrics are correlated. otherwise, not.
+# point and patch sg metrics are correlated. otherwise, not.
 # river and distance to mangroves correlated
 
 # fishing variables -----------------
 names(d1)
 d.f3<-d1%>%
-  dplyr::select(all1960.nrmA:cumulative_blast50)
+  dplyr::select(all_1960_nrmA:lag_poison_50)
 dfcor3<-round(cor(d.f3, use="complete"),2)
 corrplot(dfcor3, method="number", type = "lower")
 corrplot(dfcor3)
@@ -61,10 +82,10 @@ corrplot(dfcor3)
 
 # other - removed ones that were correlated >0.7
 d.f5<-d1%>%
-  dplyr::select(point_dist_Seagrass,point_dist_Mangrove, point_dist_Coral, patch_shape_index,pop_risk_dens_inhab,pop_risk_dens_orig,pop_risk_pop,cumulative_blast00,cumulative_blast10,fYrLag10A,fYrLag20A,fYrLag30A,mpa_area_ha,Depth_m,patch_shape_index,longitude,x,y,river_distance.nrm )
+  dplyr::select(Depth_m:y)
 
 dfcor5<-round(cor(d.f5, use="complete"),2)
-corrplot(dfcor5, method="number")
+corrplot(dfcor5, method="number",type = "lower")
 corrplot(dfcor5)
 # population and mangroves negatively cor -0.88 & population and the coordinates (x with pop density original, y with population - inhab is ok with both)
 # of this list, similar things are correlated(fishing lag), but otherwise only pop and mangroves are cor >0.7

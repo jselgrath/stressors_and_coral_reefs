@@ -32,9 +32,9 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 
 # ----------------------------------------------------------
 #read in gpkg layer of random points 
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
   glimpse()
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
 
 
@@ -54,22 +54,22 @@ max(frag$patch_dist_to_coral_m)
 # train ------
 pts2 <- pts%>%
   st_join(frag)%>%
-  dplyr::select(point_id:patch_perimeter_m,
-         patch_shape_index,# =shape_index,
-         patch_dist_to_coral_m=enn_m,
-         patch_dist_to_seagrass_m=dist_to_seagrass_m,
-         patch_dist_to_mangrove_m=dist_to_mangrove_m)%>%
+  # dplyr::select(point_id:patch_perimeter_m,
+  #        patch_shape_index,# =shape_index,
+  #        patch_dist_to_coral_m=enn_m,
+  #        patch_dist_to_seagrass_m=dist_to_seagrass_m,
+  #        patch_dist_to_mangrove_m=dist_to_mangrove_m)%>%
   glimpse()
 plot(pts2)
 
 # test ------
 pts2_te <- pts_te%>%
   st_join(frag)%>%
-  dplyr::select(point_id:patch_perimeter_m,
-         patch_shape_index,# =shape_index,
-         patch_dist_to_coral_m=enn_m,
-         patch_dist_to_seagrass_m=dist_to_seagrass_m,
-         patch_dist_to_mangrove_m=dist_to_mangrove_m)%>%
+  # dplyr::select(point_id:patch_perimeter_m,
+  #        patch_shape_index,# =shape_index,
+  #        patch_dist_to_coral_m=enn_m,
+  #        patch_dist_to_seagrass_m=dist_to_seagrass_m,
+  #        patch_dist_to_mangrove_m=dist_to_mangrove_m)%>%
   glimpse()
 plot(pts2_te)
 
@@ -94,4 +94,5 @@ pts4_te<- as.data.frame(pts2_te)%>%
 write_csv(pts4,   "./results_train/7_pts_landscape_patch.csv")
 write_csv(pts4_te,"./results_test/7_pts_landscape_patch.csv")
 
-
+st_write(pts2,"./results/train.gpkg",layer="7_pts_landscape_patch", delete_layer = TRUE)
+st_write(pts2_te,"./results/test.gpkg",layer="7_pts_landscape_patch", delete_layer = TRUE)

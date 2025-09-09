@@ -28,10 +28,8 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # -------------------------------------------
 # TASK 1.1 Load point files
 # -------------------------------------------
-#random points
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
-  glimpse()
-pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
+#read in shapefile of random point with resilience data
+pts<-st_read("./results/train.gpkg", layer="pts1_habitat")%>%
   glimpse()
 
 #read in file of coral/rubble area only
@@ -40,11 +38,15 @@ CA<-st_read("./results/habitat.gpkg",layer="co_ru_fa_reclass2")%>%
 plot(CA)
 
 
-# -------------------------------------------
+######################################
 # rast and organize the rasters of fishing effort
 
+# # loc1<-"C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/fishing/g1_normalized"
+# loc2<-"C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/gis/fishing/g1_cumulative"
+# # loc3<-"C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs/fishing/g1_lag"
+
 # fishing effort for different gear types (g1)
-files = list.files("./gis2/fishing/cumulative_g1",pattern='\\.tif$', full.names = TRUE)%>% # /g1_lag, g1_normalized
+files = list.files("./gis2/fishing/cumulative_g1",pattern='\\.tif$', full.names = TRUE)%>%
   glimpse()
 files[[1]]%>%glimpse()
 
@@ -98,30 +100,18 @@ cumulative_f<-function(x,group1,pnts=pts){
 	return(x2)
 }
 
-# train ---------------------------------------------------
-p.b<- cumulative_f(x=s.b, group1="blast",pnts=pts)%>% glimpse()
-p.p<- cumulative_f(x=s.p, group1="poison",pnts=pts)%>%glimpse()
-p.p2<-cumulative_f(x=s.p2,group1="g5poison",pnts=pts)%>% glimpse()
-p.k<- cumulative_f(x=s.k, group1="kaykay",pnts=pts)%>%glimpse()
+p.b<- cumulative_f(x=s.b, group1="blast")%>% glimpse()
+p.p<- cumulative_f(x=s.p, group1="poison")%>%glimpse()
+p.p2<-cumulative_f(x=s.p2,group1="g5poison")%>% glimpse()
+p.k<- cumulative_f(x=s.k, group1="kaykay")%>%glimpse()
 
-p.i<- cumulative_f(x=s.i, group1="illegal",pnts=pts)%>%glimpse()
-p.a<- cumulative_f(x=s.a, group1="active",pnts=pts)%>%glimpse()
-p.nS<- cumulative_f(x=s.nS, group1="nonSel",pnts=pts)%>%  glimpse()
-
-# test  ---------------------------------------------------
-p.b_te<- cumulative_f(x=s.b, group1="blast",pnts=pts_te)%>% glimpse()
-p.p_te<- cumulative_f(x=s.p, group1="poison",pnts=pts_te)%>%glimpse()
-p.p2_te<-cumulative_f(x=s.p2,group1="g5poison",pnts=pts_te)%>% glimpse()
-p.k_te<- cumulative_f(x=s.k, group1="kaykay",pnts=pts_te)%>%glimpse()
-
-p.i_te<- cumulative_f(x=s.i, group1="illegal",pnts=pts_te)%>%glimpse()
-p.a_te<- cumulative_f(x=s.a, group1="active",pnts=pts_te)%>%glimpse()
-p.nS_te<- cumulative_f(x=s.nS, group1="nonSel",pnts=pts_te)%>%  glimpse()
+p.i<- cumulative_f(x=s.i, group1="illegal")%>%glimpse()
+p.a<- cumulative_f(x=s.a, group1="active")%>%glimpse()
+p.nS<- cumulative_f(x=s.nS, group1="nonSel")%>%  glimpse()
 
 ########################
 #export points with cumulative values
 
-# train -----------------
 expt<-function(x,group1){
 	write_csv(x,file=paste0("./results_train/4_pts_cumulative_fishing_g1n_",group1,".csv"))
 }
@@ -135,17 +125,3 @@ expt(p.nS, group1="nonSel")
 expt(p.i, group1="illegal")
 expt(p.a, group1= "active")
 
-
-# test ----------------------
-expt_te<-function(x,group1){
-  write_csv(x,file=paste0("./results_test/4_pts_cumulative_fishing_g1n_",group1,".csv"))
-}
-
-expt_te(p.b_te, group1="blast")
-expt_te(p.p_te, group1="poison")
-expt_te(p.k_te, group1="kaykay")
-
-expt_te(p.p2_te, group1="g5poison")
-expt_te(p.nS_te, group1="nonSel")
-expt_te(p.i_te, group1="illegal")
-expt_te(p.a_te, group1= "active")

@@ -37,12 +37,17 @@ d1<-st_read("./gis2/habitat/db_full_area/all_full_area/habitat_full_area_rs_lek_
 
 # - clean habitat categories ----------------------
 # make deep habitat classes match
+unique(d1$hab_reclass)
 d1$hab_reclass[d1$hab_reclass=="Deep"]<-"DeepWater"
 d1$hab_reclass[d1$hab_reclass=="NA"]<-"Cloud" # to have fewer classes - these areas are not classified
+d1$hab_reclass[d1$hab_reclass=="Coral Reef Matrix"]<-"Coral" # to have fewer classes - these areas are not classified
 
+
+unique(d1$hab_orig_smpl)
 d1$hab_orig_smpl[d1$hab_orig_smpl=="Deep"]<-"DeepWater"
 d1$hab_orig_smpl[d1$geomorphic=="Deep"]<-"DeepWater"
 d1$hab_orig_smpl[d1$hab_orig_smpl=="NA"]<-"Cloud" # to have fewer classes - these areas are not classified
+d1$hab_orig_smpl[d1$hab_orig_smpl=="Coral Reef Matrix"]<-"Coral" # to have fewer classes - these areas are not classified
 
 # confirm reclassified habitat
 unique(d1$hab_reclass)
@@ -112,6 +117,6 @@ plot(st_geometry(d2), col = "lightblue", add = TRUE)
 
 st_write(d1,"./results/habitat.gpkg",layer="habitat_all_db_reclass", delete_layer = TRUE) # can use to back calculate other features (e.g., map)
 st_write(d1_merged,"./results/habitat.gpkg",layer="habitat_all_db_reclass2", delete_layer = TRUE)
-st_write(d1,"./gis2/habitat/db_full_area/all_full_area/habitat.shp",delete_layer = TRUE) 
+st_write(d1,"./gis2/habitat/db_full_area/all_full_area/habitat_updated2025.shp",delete_layer = TRUE) 
 
 st_write(d2,"./results/habitat.gpkg",layer="habitat_all_fa_reclass2", delete_layer = TRUE)
