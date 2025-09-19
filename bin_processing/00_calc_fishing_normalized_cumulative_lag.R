@@ -226,10 +226,10 @@ for (i in 1:nlyr(cumulative.p)) {
 lagf<-function(x,group1){
   
   fYrLag10A=x[[5]]
-  fYrLag20A=x[[4]]+x[[5]]
-  fYrLag30A=x[[3]]+x[[5]]+x[[4]]
-  fYrLag40A=x[[2]]+x[[5]]+x[[4]]+x[[3]]
-  fYrLag50A=x[[2]]+x[[5]]+x[[4]]+x[[3]]+x[[2]] 
+  fYrLag20A=x[[5]]+x[[4]]
+  fYrLag30A=x[[5]]+x[[4]]+x[[3]]
+  fYrLag40A=x[[5]]+x[[4]]+x[[3]]+x[[2]]
+  fYrLag50A=x[[5]]+x[[4]]+x[[3]]+x[[2]]+x[[1]] 
 
    # stack
   x2<-c(fYrLag10A,fYrLag20A,fYrLag30A,fYrLag40A,fYrLag50A)

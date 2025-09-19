@@ -32,7 +32,7 @@ tab_or_prob <- data.frame(
 tab_df(tab_or_prob,
        title = "Full Model Average (MuMIn, Odds Ratios & Probabilities)",
        digits = 3,
-       file = "./doc/model_average_full_odds.doc")
+       file = "./doc/model_avg_full_details.doc")
 
 # To get true predicted probabilities, you need to use predict() with new data.
 # Because your ratio-scale predictors are centered and scaled (typically mean = 0, SD = 1):

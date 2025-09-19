@@ -35,8 +35,6 @@ d0<-read_csv("./results_test/16_IndpVar_Pts_test_all.csv")%>%
          Depth_m=Depth_m*-1)%>%   # made depth positive for easier interpretation
   mutate(MPA=as.factor(mpa_id),     # make factors
          ecological_zone=as.factor(ecological_zone),
-         ecological_zone2=as.factor(ecological_zone2), # not updated
-         geomorphology=as.factor(geomorphology),
          Reef_state=resilience_id
   )%>%
   filter(!is.na(Depth_m))%>% # one point
@@ -105,8 +103,10 @@ cs.<- function(x) scale(x,center=TRUE,scale=TRUE)
 # run cs fxn on variables
 d1$depth<-as.numeric(cs. (d1$Depth_m))
 d1$sg<-as.numeric(cs. (d1$point_dist_Seagrass))
+d1$sg100<-as.numeric(cs. (d1$point_dist_Seagrass100))
 d1$mg<-as.numeric(cs. (d1$point_dist_Mangrove))
 d1$river<-as.numeric(cs. (d1$point_dist_river))
+d1$river100<-as.numeric(cs. (d1$point_dist_river100))
 d1$psi<-as.numeric(cs. (d1$patch_shape_index))
 d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))

@@ -102,8 +102,6 @@ d0<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>%
   Depth_m=Depth_m*-1)%>%   # made depth positive for easier interpretation
   mutate(MPA=as.factor(mpa_id),     # make factors
          ecological_zone=as.factor(ecological_zone),
-         ecological_zone2=as.factor(ecological_zone2), # not updated
-         geomorphology=as.factor(geomorphology),
          Reef_state=resilience_id
          )%>%
   glimpse()
@@ -168,8 +166,10 @@ cs.<- function(x) scale(x,center=TRUE,scale=TRUE)
 # run cs fxn on variables
 d1$depth<-as.numeric(cs. (d1$Depth_m))
 d1$sg<-as.numeric(cs. (d1$point_dist_Seagrass))
+d1$sg100<-as.numeric(cs. (d1$point_dist_Seagrass100))
 d1$mg<-as.numeric(cs. (d1$point_dist_Mangrove))
 d1$river<-as.numeric(cs. (d1$point_dist_river))
+d1$river100<-as.numeric(cs. (d1$point_dist_river100))
 d1$psi<-as.numeric(cs. (d1$patch_shape_index))
 d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))
@@ -246,13 +246,13 @@ f_sp_autocor <- function(data,model) {
 # base function # ---------------------------
 var1<-Reef_state ~ 
   depth+
-  sg+
-  I(sg^2)+
+  sg100+
+  I(sg100^2)+
   psi2+
   pr_inhab+
   # pr+ # OR point_dist_Mangrove or river_distance
   # mg+
-  river+
+  river100+
   fishing_30lag+
   blast10+
   pr_inhab:fishing_30lag+
@@ -284,7 +284,7 @@ d1_r%>%
   filter(abs(r1)>2.5)
 
 
-# Plant methods to check for best model with spatial autocorrelation  -----------------------------------------
+# Plant methods to check for best model with spatial autocorrelation  ----------------------------
 m1_sac<-f_sp_autocor(data=d1,model=m1);m1_sac
 # autocorrelated - one method for addressing this is mixed effects models (see Plant 2020)
 
@@ -295,13 +295,13 @@ m1_sac<-f_sp_autocor(data=d1,model=m1);m1_sac
 # base function # ---------------------------
 var2<-Reef_state ~ 
   depth+
-  sg+
-  I(sg^2)+# sg2+
+  sg100+
+  I(sg100^2)+
   psi2+
-  pr_inhab+ # pop, mg, river distance 
+  pr_inhab+ 
   # pr+ # OR point_dist_Mangrove or river_distance
   # mg+
-  river+
+  river100+
   fishing_30lag+
   blast10+
   pr_inhab:fishing_30lag+
@@ -376,8 +376,10 @@ d2<-d1%>%
 # re-run cs fxn on variables
 d2$depth<-as.numeric(cs. (d2$Depth_m))
 d2$sg<-as.numeric(cs. (d2$point_dist_Seagrass))
+d1$sg100<-as.numeric(cs. (d1$point_dist_Seagrass100))
 d2$mg<-as.numeric(cs. (d2$point_dist_Mangrove))
 d2$river<-as.numeric(cs. (d2$point_dist_river))
+d2$river100<-as.numeric(cs. (d2$point_dist_river100))
 d2$psi<-as.numeric(cs. (d2$patch_shape_index))
 d2$pr_orig<-as.numeric(cs. (d2$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d2$pr_inhab<-as.numeric(cs. (d2$pop_risk_dens_inhab))
@@ -389,8 +391,6 @@ d2$fishing20<-as.numeric(cs. (d2$cumulative_all_10))
 d2$blast10<-as.numeric(cs. (d2$cumulative_blast_10))
 d2$poison10<-as.numeric(cs. (d2$cumulative_poison_10))
 d2$pr<-as.numeric(cs. (d2$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
-
-
 d2$psi2<- -1*d2$psi
 
 
@@ -405,6 +405,14 @@ write_csv(d2,"./results_train/17_IndpVar_Pts_train_for_models_all.csv")
 # -----------------------------------------------
 m_all2<-lme4::glmer(fxn2,
                     family=binomial(link=logit), data=d2, na.action = "na.fail")
+
+
+# when I changed river to river100 (dist to rivers/100) which is easier to interpret the model started converging at just under the threshold. Since the results are nearly identical and the extra time is 0.00029 vs 0.0002 I am proceeding.
+
+# Warning message:
+#   In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                  Model failed to converge with max|grad| = 0.00293738 (tol = 0.002, component 1)
+               
 summary(m_all2)
 Anova(m_all2)
 tab_model(m_all2, show.df = TRUE)
@@ -456,7 +464,7 @@ ranef(m_all2) # group level errors for intercepts and slopes
 # visualize aspects of  model ------------------------
 visreg(m_all2,"depth","ecological_zone", xlab="Depth",ylab="Reef State")
 visreg(m_all2,"psi2","ecological_zone", xlab="Patch compactness",ylab="Reef State")
-visreg(m_all2,"sg","ecological_zone", xlab="Seagrass isolation",ylab="Reef State")
+visreg(m_all2,"sg100","ecological_zone", xlab="Seagrass isolation",ylab="Reef State")
 visreg(m_all2,"pr_inhab","ecological_zone", xlab="Population_risk",ylab="Reef State")
 visreg(m_all2,"fishing_30lag","ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
 visreg(m_all2,"blast10","ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
@@ -665,10 +673,14 @@ save(m_all3,file="./results_train/model_no_landscape.R")
 
 #save image to set options for probabilities in GT
 save.image("./results_train/mixedEf_final_all1.RData")
+
+# reload if needed 
+remove(list=ls())
 load("./results_train/mixedEf_final_all1.RData")
 
 
 
-
+# save modified dataset (centered/scaled, outliers removed) -----------------------
+write_csv(d2,"./results_train/17_IndpVar_Pts_train_for_models_all.csv")
 
 

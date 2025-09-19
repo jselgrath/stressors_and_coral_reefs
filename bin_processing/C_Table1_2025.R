@@ -19,21 +19,22 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # ------------------------------------------------------
 
 
-# load data ------------------
-d2<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>%
-  mutate(MPA=as.factor(mpa), 
-         # Depth=Depth*-1,
-         Ecological_zone=as.factor(ecological_zone)
-  )%>%
-  glimpse()
-
 # load final model  ---------------
 m1_avg <- readRDS("./results_train/model_full_avg.rds")
 m3_avg <- readRDS("./results_train/model_no_landscape_avg.rds")
 
-# load final model (m_all2) ---------------
+# load final model (m_all2) for R2 values from full models ---------------
 load("./results_train/model_full.R")
 load("./results_train/model_no_landscape.R")
+
+# load data - fit to model (centered & scaled) ---------------------
+d2<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>% # all
+  mutate(MPA=as.factor(mpa_id),     # make factors - depth already positive
+         ecological_zone=as.factor(ecological_zone),
+         Reef_state=resilience_id )%>%
+  glimpse()
+
+
 
 # image("./results_train/mixedEf_final_all1_no_landscape.RData")
 
@@ -47,30 +48,30 @@ tab_model(m_all2) # need for R2 etc
 var_types <- c(
   "psi2"            = "Biophysical",
   "MPA601"          = "Socioeconomic",
-  "sg"              = "Biophysical",
+  "sg100"              = "Biophysical",
   "depth"           = "Biophysical",
-  "I(sg^2)"         = "Biophysical",
+  "I(sg100^2)"         = "Biophysical",
   "blast10:pr_inhab"= "Socioeconomic",
   "fishing_30lag:pr_inhab"   = "Socioeconomic",
   "blast10"         = "Socioeconomic",
   "fishing_30lag"   = "Socioeconomic",
   "pr_inhab"        = "Socioeconomic",
-  "river"           = "Biophysical"
+  "river100"           = "Biophysical"
 )
 
 # -- pretty names lookup  ---
 pretty_names <- c(
   "psi2"            = "Patch Compactness",
   "MPA601"          = "MPA (protected)",
-  "sg"              = "Distance to Seagrass",
+  "sg100"              = "Distance to Seagrass",
   "depth"           = "Depth",
-  "I(sg^2)"         = "Distance to Seagrass²",
+  "I(sg100^2)"         = "Distance to Seagrass²",
   "blast10:pr_inhab"= "Blast fishing, 2000-2010 × Pop. density risk",
   "blast10"         = "Blast fishing, 2000-2010",
   "fishing_30lag"   = "Fishing legacy, 1980-2000",
   "fishing_30lag:pr_inhab"   = "Fishing legacy, 1980-2000 × Pop. density risk",
   "pr_inhab"        = "Population density risk",
-  "river"           = "Distance to Rivers")
+  "river100"           = "Distance to Rivers")
 
 
 # -------------------------------
@@ -102,7 +103,7 @@ inclusion_counts <- apply(m1_avg$coefArray[, "Estimate", ], 2, \(x) sum(!is.na(x
 n_df <- enframe(inclusion_counts, name = "Term", value = "Nmodels")
 
 # --- Lookup tables (pretty names + variable type) ---
-pretty_lu <- enframe(pretty_names, name = "Term", value = "Parameters")
+pretty_lu <- enframe(pretty_names, name = "Term", value = "Variables")
 type_lu   <- enframe(var_types,    name = "Term", value = "VarType")
 
 # --- Join everything together in one chain ---
@@ -112,7 +113,7 @@ tab_export <- tab_or %>%
   left_join(pretty_lu, by = "Term") %>%
   left_join(type_lu,   by = "Term") %>%
   mutate(
-    Parameters = if_else(is.na(Parameters), Term, Parameters),
+    Variables = if_else(is.na(Variables), Term, Variables),
     OddsRatio  = round(OddsRatio, 2),
     CI_low     = round(CI_low, 2),
     CI_high    = round(CI_high, 2),
@@ -122,18 +123,29 @@ tab_export <- tab_or %>%
       p_value < 0.001 ~ "<0.001",
       TRUE            ~ sprintf("%.3f", p_value)
     ),
-    # sanitize labels for export
-    Parameters = gsub("×", "x", Parameters),
-    Parameters = gsub("²", "^2", Parameters)
+    # sanitize labels for export (so don't get corrupted)
+    Variables = gsub("×", "x", Variables),
+    Variables = gsub("²", "^2", Variables)
   ) %>%
-  select(Parameters, Type = VarType, OddsRatio, CI, p_value, WeightSum, Nmodels)%>%
+
   arrange(desc(OddsRatio))
 
-# --- Export with sjPlot ---
-tab_df(tab_export,
-       title    = "Fixed Effects Odds Ratios (Averaged Model)",
-       subtitle = "Fixed effects averaged across ΔAIC ≤ 2 models",
-       file     = "./doc/model_avg_odds_ratios_full.doc")
+tab_export
+
+# --save to .csv so can import for probability info
+write_csv(tab_export,"./doc/model_avg_odds_ratios_full.csv")
+
+
+# 
+# # --- Pretty Export with sjPlot ---
+# tab_df(tab_export,
+#        title    = "Fixed Effects Odds Ratios (Averaged Model)",
+#        subtitle = "Fixed effects averaged across ΔAIC ≤ 2 models",
+#        file     = "./doc/model_avg_odds_ratios_full.doc")
+
+# For probability scale (best for ecological interpretation):
+#   Compute marginal effects to say:
+#   On average, a 1 m increase in depth increased the probability of live coral presence by ~5 percentage points.
 
 
 
@@ -194,7 +206,7 @@ inclusion_counts3 <- apply(m3_avg$coefArray[, "Estimate", ], 2, \(x) sum(!is.na(
 n_df3 <- enframe(inclusion_counts3, name = "Term", value = "Nmodels")
 
 # --- Lookup tables (pretty names + variable type) ---
-pretty_lu3 <- enframe(pretty_names3, name = "Term", value = "Parameters")
+pretty_lu3 <- enframe(pretty_names3, name = "Term", value = "Variables")
 type_lu3   <- enframe(var_types3,    name = "Term", value = "VarType")
 
 # --- Join everything together in one chain ---
@@ -204,7 +216,7 @@ tab_export3 <- tab_or3 %>%
   left_join(pretty_lu3, by = "Term") %>%
   left_join(type_lu3,   by = "Term") %>%
   mutate(
-    Parameters = if_else(is.na(Parameters), Term, Parameters),
+    Variables = if_else(is.na(Variables), Term, Variables),
     OddsRatio  = round(OddsRatio, 2),
     CI_low     = round(CI_low, 2),
     CI_high    = round(CI_high, 2),
@@ -215,17 +227,21 @@ tab_export3 <- tab_or3 %>%
       TRUE            ~ sprintf("%.3f", p_value)
     ),
     # sanitize labels for export
-    Parameters = gsub("×", "x", Parameters),
-    Parameters = gsub("²", "^2", Parameters)
+    Variables = gsub("×", "x", Variables),
+    Variables = gsub("²", "^2", Variables)
   ) %>%
-  select(Parameters, Type = VarType, OddsRatio, CI, p_value, WeightSum, Nmodels)%>%
+  dplyr::select(Variables, Type = VarType, OddsRatio, CI, p_value, WeightSum, Nmodels)%>%
   arrange(desc(OddsRatio))
 
+# --save to .csv so can import for probability info
+write_csv(tab_export,"./doc/model_avg_odds_no_landscape.csv")
+
+
 # --- Export with sjPlot ---
-tab_df(tab_export3,
-       title    = "Fixed Effects Odds Ratios (Averaged Model - No Landscape Variables)",
-       subtitle = "Fixed effects averaged across ΔAIC ≤ 2 models",
-       file     = "./doc/model_avg_odds_ratios_no_landscape.doc")
+# tab_df(tab_export3,
+#        title    = "Fixed Effects Odds Ratios (Averaged Model - No Landscape Variables)",
+#        subtitle = "Fixed effects averaged across ΔAIC ≤ 2 models",
+#        file     = "./doc/model_avg_odds_ratios_no_landscape.doc")
 
 
 
@@ -249,10 +265,13 @@ tab_or_prob_all <- data.frame(
   row.names = NULL
 )
 
-tab_df(tab_or_prob_all,
-       title = "Full Model Average (MuMIn, Odds Ratios & Probabilities)",
-       digits = 3,
-       file = "./doc/model_avg_details_full.doc")
+# save ---
+write_csv(tab_or_prob_all,"./doc/model_avg_details_full.csv")
+
+# tab_df(tab_or_prob_all,
+#        title = "Full Model Average (MuMIn, Odds Ratios & Probabilities)",
+#        digits = 3,
+#        file = "./doc/model_avg_details_full.doc")
 
 # table showing both
 tab_or_prob_all3 <- data.frame(
@@ -266,7 +285,10 @@ tab_or_prob_all3 <- data.frame(
   row.names = NULL
 )
 
-tab_df(tab_or_prob_all3,
-       title = "Full Model Average (MuMIn, Odds Ratios & Probabilities)",
-       digits = 3,
-       file = "./doc/model_avg_details_no_landscape.doc")
+# save ---
+write_csv(tab_or_prob_all3,"./doc/model_avg_details_no_landscape.csv")
+
+# tab_df(tab_or_prob_all3,
+#        title = "Full Model Average (MuMIn, Odds Ratios & Probabilities)",
+#        digits = 3,
+#        file = "./doc/model_avg_details_no_landscape.doc")

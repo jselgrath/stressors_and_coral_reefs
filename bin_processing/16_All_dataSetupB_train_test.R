@@ -17,11 +17,15 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # load data #
 d1<-read_csv("./results_train/14_IndpVar_Pts_train.csv")%>%
   mutate(municipality=as.factor(Id_MunWtr)) %>%  # update name
+  mutate(point_dist_Seagrass100=point_dist_Seagrass/100,
+         point_dist_river100=point_dist_river/100)%>%
 glimpse()
 
 
 d1_te<-read_csv("./results_test/14_IndpVar_Pts_test.csv")%>%
   mutate(municipality=as.factor(Id_MunWtr))%>%   # update name
+  mutate(point_dist_Seagrass100=point_dist_Seagrass/100,
+         point_dist_river100=point_dist_river/100)%>%
 glimpse()
          
         
@@ -53,9 +57,10 @@ d2<-d1%>%
                 ecological_zone,ecological_zone2,mpa_barangay, 
                 mpa_id, mpa, mpa_status, mpa_area_ha, municipality, Depth_m, point_dist_river,
                 point_dist_Coral, point_dist_Seagrass,point_dist_Mangrove, 
+                point_dist_Seagrass100,point_dist_river100,
                 geomorphology, patch_shape_index,
                 pop_risk_dens_inhab, pop_risk_dens_orig,pop_risk_pop,
-                all_2010_nrmA:blast_2010_nrmA,
+                all_1980_nrmA:blast_2010_nrmA,
                 cumulative_all_00:cumulative_poison_50,
                 lag_all_10:lag_all_50,
                 x,y)%>%
@@ -68,9 +73,10 @@ d2_te<-d1_te%>%
                 ecological_zone,ecological_zone2,mpa_barangay, 
                 mpa_id, mpa, mpa_status, mpa_area_ha, municipality, Depth_m, point_dist_river,
                 point_dist_Coral, point_dist_Seagrass,point_dist_Mangrove, 
+                point_dist_Seagrass100,point_dist_river100,
                 geomorphology, patch_shape_index,
                 pop_risk_dens_inhab, pop_risk_dens_orig,pop_risk_pop,
-                all_2010_nrmA:blast_2010_nrmA,
+                all_1980_nrmA:blast_2010_nrmA,
                 cumulative_all_00:cumulative_poison_50,
                 lag_all_10:lag_all_50,
                 x,y)%>%
