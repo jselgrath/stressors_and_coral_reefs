@@ -28,13 +28,18 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 # -------------------------------------------
 
 # -------------------------------------------
-# Load point files with habitat & mpa data
-#read in gpkg layer of random points 
-# train --
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
+#read in random points - # update this name if change sampling number and distance
+
+# train --------
+# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train_extra_pts100")%>% 
+#   glimpse()
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # 
   glimpse()
+
+# test ------
 pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
+
 
 # min and max values for rasters
 mx_orig<-read_csv("./doc/population_risk_orig_range.csv")  # min and max values
@@ -43,7 +48,7 @@ mx_pop<-read_csv("./doc/population_risk_pop_range.csv")
 
 
 # -------------------------------------------
-# Stack and organize the rasters of poplation risk
+# -- Stack and organize the rasters of poplation risk
 
 # list of files with 'reef' in the name - clipped to reef area
 files = list.files(path="./gis2/population_risk",pattern='*reef.*\\.tif$', full.names = TRUE)%>%

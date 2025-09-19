@@ -23,19 +23,12 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # -------------------------------------------
 
 # # load points with  some indp data 
-# pts<-st_read("./results/train.gpkg", layer="1_pts_habitat_tr")%>%
-  # glimpse()
-pts<-st_read("./results_train/1_pts_habitat_tr_no_bohol.shp")%>% #  removed points near bohol in ArcPro
+pts<-st_read("./results/train.gpkg", layer="1_pts_habitat_tr")%>%
   glimpse()
 
-
-
-
-# pts_te<-st_read("./results/test.gpkg", layer="1_pts_habitat_te")%>%
-#   glimpse()
-pts_te<-st_read("./results_test/1_pts_habitat_te_no_bohol.shp")%>% #  removed points near bohol in ArcPro
+pts_te<-st_read("./results/test.gpkg", layer="1_pts_habitat_te")%>%
   glimpse()
-# plot(pts_te)
+
 
 
 
@@ -87,7 +80,7 @@ f7_te<-read_csv("./results_test/7_pts_landscape_patch.csv")%>%  dplyr::select(-g
 f8<-read_csv("./results_train/8_pts_landscape_edge_dist.csv")%>%  glimpse()
 f8_te<-  read_csv("./results_test/8_pts_landscape_edge_dist.csv")%>%  glimpse()
 
-f9<-read_csv("./results_train/9_pts_IndpVarOther_pts.csv")%>%  dplyr::select(-geom)%>%glimpse()
+f9<-read_csv("./results_train/9_pts_IndpVarOther_pts.csv")%>%    dplyr::select(-geom)%>%   glimpse()
 f9_te<-  read_csv("./results_test/9_pts_IndpVarOther_pts.csv")%>%  dplyr::select(-geom)%>%glimpse()
 
 f10<- read_csv("./results_train/10_pts_PopRsk_Norm.csv")%>%   glimpse()
@@ -113,8 +106,7 @@ pts2<-f2%>%
   left_join(f10)%>%
   left_join(f11)%>%
   dplyr::select(-gridcode)%>%
-  mutate(resilience_id=if_else(hab_reclass=="Coral",1,0))%>%
-  dplyr::select(point_id,patch_id,hab_reclass,resilience_id,all_1960_nrmA:river_distance.nrm)%>% # reordering columns
+  dplyr::select(point_id,patch_id,all_1960_nrmA:point_dist_river.nrm)%>% # reordering columns
   glimpse()
 
 
@@ -130,8 +122,7 @@ pts2_te<-f2_te%>%
   left_join(f10_te)%>%
   left_join(f11_te)%>%
   dplyr::select(-gridcode)%>%
-  mutate(resilience_id=if_else(hab_reclass=="Coral",1,0))%>%
-  dplyr::select(point_id,patch_id,hab_reclass,resilience_id,all_1960_nrmA:river_distance.nrm)%>% # reordering columns
+  dplyr::select(point_id,patch_id,all_1960_nrmA:point_dist_river.nrm)%>% # reordering columns
   glimpse()
 
 

@@ -23,7 +23,7 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # --read in shapefile of focal area  ----------------------------------
 d0<-st_read("./gis2/focal_area/focal_area_sm.shp")%>%
   glimpse()
-plot(d0)
+# plot(d0)
 
 # make sure CRS is projected (so areas are meaningful, not lat/long & important for 250 m distance)
 st_crs(d0) # WGS 84 / UTM zone 51N 
@@ -36,11 +36,11 @@ d1<-st_read("./gis2/habitat/db_full_area/all_full_area/habitat_full_area_rs_lek_
 # plot(d1[1])
 
 # - clean habitat categories ----------------------
-# make deep habitat classes match
+# make habitat classes match
 unique(d1$hab_reclass)
 d1$hab_reclass[d1$hab_reclass=="Deep"]<-"DeepWater"
-d1$hab_reclass[d1$hab_reclass=="NA"]<-"Cloud" # to have fewer classes - these areas are not classified
-d1$hab_reclass[d1$hab_reclass=="Coral Reef Matrix"]<-"Coral" # to have fewer classes - these areas are not classified
+d1$hab_reclass[d1$hab_reclass=="NA"]<-"Cloud" # these areas are not classified
+d1$hab_reclass[d1$hab_reclass=="Coral Reef Matrix"]<-"Coral" 
 
 
 unique(d1$hab_orig_smpl)
@@ -100,7 +100,7 @@ d1_merged<-d1_proj%>%
   glimpse()
 d1_merged
 
-plot(d1_merged[1])
+# plot(d1_merged[1])
 
 
 # -------------------------------------
@@ -110,13 +110,30 @@ d2<- st_intersection(d1_merged, d0)%>%
   select(-FID)
 d2$hab_reclass[d2$hab_reclass=="Coral Reef Matrix"]<-"Coral"
 
-plot(st_geometry(d1_merged), border = "black")
-plot(st_geometry(d2), col = "lightblue", add = TRUE)
+# plot(st_geometry(d1_merged), border = "black")
+# plot(st_geometry(d2), col = "lightblue", add = TRUE)
+
+
+
+
 
 # -save ----------------------------
 
 st_write(d1,"./results/habitat.gpkg",layer="habitat_all_db_reclass", delete_layer = TRUE) # can use to back calculate other features (e.g., map)
 st_write(d1_merged,"./results/habitat.gpkg",layer="habitat_all_db_reclass2", delete_layer = TRUE)
-st_write(d1,"./gis2/habitat/db_full_area/all_full_area/habitat_updated2025.shp",delete_layer = TRUE) 
 
 st_write(d2,"./results/habitat.gpkg",layer="habitat_all_fa_reclass2", delete_layer = TRUE)
+
+# save as shapefile
+st_write(d1,"./gis2/habitat/db_full_area/all_full_area/habitat_updated2025.shp",delete_layer = TRUE) 
+
+# create a readmefile for shapefile -----------------
+readme_text <- c("readme",
+                 "Jennifer Selgrath",
+                 "",
+  "The file /gis2/habitat/db_full_area/all_full_area/habitat_updated2025.shp is based on ./gis2/habitat/db_full_area/all_full_area/habitat_full_area_rs_lek_reclass_20250615_union_with_fa2.shp. Three habitats in the habitat_updated2025.shp file have been reclassified based on confusion matrix analysis 2025 from PSF LTM data.  See code in 000_organize_habitat_map.R")
+
+# Write to a text file
+writeLines(readme_text, con = "./gis2/habitat/db_full_area/all_full_area/readme.txt")
+
+

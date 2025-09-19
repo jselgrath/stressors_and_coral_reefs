@@ -8,6 +8,7 @@
 library(corrplot)
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
 # -------------------------------------------
 
 # -------------------------------------------
@@ -35,17 +36,19 @@ is.na(d0$pop_risk_dens_inhab)
 # drop NAs -------------------------
 d1<-d0%>%
   na.omit()%>% # loose ~ 12 points
+  dplyr::select(-pop_risk_dens_inhab,-pop_risk_dens_orig,-pop_risk_pop)%>% # remove non-normalized versions of population variables
   glimpse()
 
 d1_te<-d0_te%>%
   na.omit()%>% # loose ~ 15 points
+  dplyr::select(-pop_risk_dens_inhab,-pop_risk_dens_orig,-pop_risk_pop)%>% # remove non-normalized versions of population variables
   glimpse()
 
 
 
 # -- Correlations between variables ----------------------------------
 cor(d1$point_dist_Seagrass,d1$point_dist_Mangrove)
-cor(d1$pop_risk_dens_orig,d1$pop_risk_dens_inhab) # high
+cor(d1$pop_risk_dens_orig.nrm,d1$pop_risk_dens_inhab.nrm) # high
 cor(d1$cumulative_all_00,d1$all_2010_nrmA) # same
 
 
@@ -53,7 +56,7 @@ cor(d1$cumulative_all_00,d1$all_2010_nrmA) # same
 names(d1)
 
 d.f<-d1%>%
-  dplyr::select(pop_risk_dens_inhab:pop_risk_pop.nrm)
+  dplyr::select(pop_risk_dens_inhab.nrm:pop_risk_pop.nrm)
 dfcor<-round(cor(d.f, use="complete"),2)
 corrplot(dfcor, method="number", type = "lower")
 corrplot(dfcor)
@@ -64,7 +67,7 @@ corrplot(dfcor, method="number", type = "lower")
 
 # landscape
 d.f2<-d1%>%
-  dplyr::select(patch_shape_index,patch_dist_to_coral_m:point_dist_Mangrove,river_distance.nrm)
+  dplyr::select(patch_shape_index,patch_dist_to_coral_m:point_dist_Mangrove,point_dist_river)
 dfcor2<-round(cor(d.f2, use="complete"),2)
 corrplot(dfcor2, method="number", type = "lower")
 corrplot(dfcor2)
@@ -82,7 +85,9 @@ corrplot(dfcor3)
 
 # other - removed ones that were correlated >0.7
 d.f5<-d1%>%
-  dplyr::select(Depth_m:y)
+  dplyr::select(Depth_m:y)%>%
+  dplyr::select(-point_dist_river.nrm,-geomorphology_id)%>%
+  dplyr::select(depth_m=Depth_m,mpa_area_ha:point_dist_Mangrove,point_dist_river,longitude:y)# have other version
 
 dfcor5<-round(cor(d.f5, use="complete"),2)
 corrplot(dfcor5, method="number",type = "lower")

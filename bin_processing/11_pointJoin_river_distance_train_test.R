@@ -17,11 +17,18 @@ remove(list=ls())
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
 # -------------------------------------------
-#read in random points
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
+#read in random points - # update this name if change sampling number and distance
+
+# train --------
+# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train_extra_pts100")%>% 
+#   glimpse()
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # 
   glimpse()
+
+# test ------
 pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
+
 
 #read in file of coral/rubble area only
 CA<-st_read("./results/habitat.gpkg",layer="co_ru_fa_reclass2")%>%
@@ -63,7 +70,7 @@ d1<-stars::st_as_stars(s2)%>%
   st_as_sf()%>% # transform back to sf
   st_join(pts)%>% # join to point data
   tibble()%>%
-  dplyr::select(river_distance=DistRiver,point_id)%>%
+  dplyr::select(point_dist_river=DistRiver,point_id)%>%
   glimpse()
 
 plot(d1[[1]])
@@ -74,7 +81,7 @@ d1_te<-stars::st_as_stars(s2)%>%
   st_as_sf()%>% # transform back to sf
   st_join(pts_te)%>% # join to point data
   tibble()%>%
-  dplyr::select(river_distance=DistRiver,point_id)%>%
+  dplyr::select(point_dist_river=DistRiver,point_id)%>%
   glimpse()
 
 ##########################
@@ -83,15 +90,15 @@ d1_te<-stars::st_as_stars(s2)%>%
 
 # TRAIN -----------------------------------------------------------------
 d2<-d1
-d2$river_distance.nrm=d2$river_distance/mx$river_dist_max
+d2$point_dist_river.nrm=d2$point_dist_river/mx$river_dist_max
 glimpse(d2)
-qplot(d2$river_distance.nrm)
+qplot(d2$point_dist_river.nrm)
 
 # TEST -----------------------------------------------------------------
 d2_te<-d1_te
-d2_te$river_distance.nrm=d2_te$river_distance/mx$river_dist_max
+d2_te$point_dist_river.nrm=d2_te$point_dist_river/mx$river_dist_max
 glimpse(d2_te)
-qplot(d2_te$river_distance.nrm)
+qplot(d2_te$point_dist_river)
 
 
 

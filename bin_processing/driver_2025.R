@@ -44,13 +44,13 @@ source("./bin_processing/000_select_co_ru_habitat.R")
 
 # -- landscape variables --------------------------------
 # Calculate patch area and perimeter & nearest-patch edge-to-edge distance (same habitat)
-source("./bin_processing/00_pointJoin_IndpVarLandscape.R")
+source("./bin_processing/00_IndpVarLandscape.R")
 # input: ./results/habitat.gpkg","habitat_all_db_reclass2
 # output: ./results/habitat.gpkg",layer="habitat_all_db_landscape1"
 
 
 # calculate landscape variables: distance from coral and rubble patches to seagrass and mangrove patches (edge to edge)
-source("./bin_processing/00_pointJoin_IndpVarLandscape2.R")
+source("./bin_processing/00_IndpVarLandscape2.R")
 # input:  ./results/habitat.gpkg",layer="habitat_all_db_landscape1"
 # output: ./results/habitat.gpkg",layer="habitat_all_db_landscape2"
 
@@ -136,72 +136,72 @@ source("./bin_processing/1_pointJoin_resilience_train_test.R")
 # for normalized, cumulative, and lag fishing data
  #  - normalized by all years '.NrmA'
 # ------------------------------------
-sounce("./bin_processing/2_pointJoin_fishing_train_test.R")
-# output: ./results_train/2_pts_fishingeffort_1normalized.csv")
-#         ./results_test/2_pts_fishingeffort_1normalized.csv")
-#         ./results_train/2_pts_fishingeffort_2cumulative.csv")
-#         ./results_test/2_pts_fishingeffort_2cumulative.csv")
-#         ./results_train/2_pts_fishingeffort_3lag.csv")
-#         ./results_test/2_pts_fishingeffort_3lag.csv")
+source("./bin_processing/2_pointJoin_fishing_train_test.R")
+# output: ./results_train/2_pts_fishingeffort_normalized.csv")
+#         ./results_test/2_pts_fishingeffort_normalized.csv")
+#         ./results_train/3_pts_fishingeffort_cumulative.csv")
+#         ./results_test/3_pts_fishingeffort_cumulative.csv")
+#         ./results_train/4_pts_fishingeffort_lag.csv")
+#         ./results_test/4_pts_fishingeffort_lag.csv")
 
 
-
-
-source("./bin_processing/2_pointJoin_FishingAllYrs_1Norm_train_test.R")
-# input:  ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_train"  
-#         ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_test
-#             ./gis/coralrubble/CoralRubArea.shp
-#             ./fishing/EffortEstimates/YEAR
-# output:     ./results_train/2_pts_FishingYrs_1normalized.csv
-#             ./results_test/2_pts_FishingYrs_1normalized.csv
-
-# ------------------------------------------
-# rename cumulative files to 'cumulative'  > only need to run one time
-#source(./bin_processing/rename_cumulative_files.R)
-
-
-# ------------------------------------
-# cumulative fishing and lag fishing (additive) - ALL gears
-# ------------------------------------
-source("./bin_processing/3_pointJoin_FishingAllYrs_2Cumulative_train_test.R")
-# input:      ./results_train/2_pts_FishingYrs_1normalized.csv
-#             ./results_test/2_pts_FishingYrs_1normalized.csv
-# output:     ./results_train/3pts_FishingYrs_cumulative.csv
-#             ./results_test/3pts_FishingYrs_cumulative.csv
-
-# ------------------------------------
-# join points with fishing effort data (g1n and some g5n and categories from Ch3) from decades
-# ------------------------------------
-
-# ------------------------------------
-# create normalized impact values for each year '.Nrm' and for all years '.NrmA'
-# ------------------------------------
-source("./bin_processing/4_pointJoin_Fishing_g1n_1cumulative_train_test.R")
-# input:      ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train"
-#             ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test"
-#             ./gis/coralrubble/CoralRubArea.shp   
-# output:     ./results_train/4_pts_cumFishing_g1n_GEAR.csv
-#             ./results_test/4_pts_cumFishing_g1n_GEAR.csv
-
-# ------------------------------------
-# join points with fishing effort data (destructive) from decades
-# ------------------------------------
-source('./bin_processing/5_pointJoin_FishingDestYrsNorm_train_test.R')
-# input:      ./results/rs_only/hab_Resil_Pts_RS.gpkg
-#             ./gis/coralrubble/CoralRubArea.shp   
-#             ./gis/fishing/effort_estimates/ ... destYEAR.tif    
-# output:     ./results_train/5_pts_FishingYrsDest_normalized.csv
-#             ./results_test/5_pts_FishingYrsDest_normalized.csv
-
-# ------------------------------------
-# cumulative fishing (additive) - DESTRUCTIVE GEARS
-# ------------------------------------
-source("./bin_processing/6_pointJoin_FishingYrsDest_NormCumulative_train_test.R")
-# input:      ./results_train/5_pts_FishingYrsDest_normalized.csv
-#             ./results_test/5_pts_FishingYrsDest_normalized.csv   
-# output:     ./results_train/6_pts_FishingYrs_destructive_cumulative.csv
-#             ./results_test/6_pts_FishingYrs_destructive_cumulative.csv
-
+# 
+# 
+# source("./bin_processing/2_pointJoin_FishingAllYrs_1Norm_train_test.R")
+# # input:  ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_train"  
+# #         ./results/train.gpkg, layer="stratified_random_points_1500pts_100m_test
+# #             ./gis/coralrubble/CoralRubArea.shp
+# #             ./fishing/EffortEstimates/YEAR
+# # output:     ./results_train/2_pts_FishingYrs_1normalized.csv
+# #             ./results_test/2_pts_FishingYrs_1normalized.csv
+# 
+# # ------------------------------------------
+# # rename cumulative files to 'cumulative'  > only need to run one time
+# #source(./bin_processing/rename_cumulative_files.R)
+# 
+# 
+# # ------------------------------------
+# # cumulative fishing and lag fishing (additive) - ALL gears
+# # ------------------------------------
+# source("./bin_processing/3_pointJoin_FishingAllYrs_2Cumulative_train_test.R")
+# # input:      ./results_train/2_pts_FishingYrs_1normalized.csv
+# #             ./results_test/2_pts_FishingYrs_1normalized.csv
+# # output:     ./results_train/3pts_FishingYrs_cumulative.csv
+# #             ./results_test/3pts_FishingYrs_cumulative.csv
+# 
+# # ------------------------------------
+# # join points with fishing effort data (g1n and some g5n and categories from Ch3) from decades
+# # ------------------------------------
+# 
+# # ------------------------------------
+# # create normalized impact values for each year '.Nrm' and for all years '.NrmA'
+# # ------------------------------------
+# source("./bin_processing/4_pointJoin_Fishing_g1n_1cumulative_train_test.R")
+# # input:      ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train"
+# #             ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test"
+# #             ./gis/coralrubble/CoralRubArea.shp   
+# # output:     ./results_train/4_pts_cumFishing_g1n_GEAR.csv
+# #             ./results_test/4_pts_cumFishing_g1n_GEAR.csv
+# 
+# # ------------------------------------
+# # join points with fishing effort data (destructive) from decades
+# # ------------------------------------
+# source('./bin_processing/5_pointJoin_FishingDestYrsNorm_train_test.R')
+# # input:      ./results/rs_only/hab_Resil_Pts_RS.gpkg
+# #             ./gis/coralrubble/CoralRubArea.shp   
+# #             ./gis/fishing/effort_estimates/ ... destYEAR.tif    
+# # output:     ./results_train/5_pts_FishingYrsDest_normalized.csv
+# #             ./results_test/5_pts_FishingYrsDest_normalized.csv
+# 
+# # ------------------------------------
+# # cumulative fishing (additive) - DESTRUCTIVE GEARS
+# # ------------------------------------
+# source("./bin_processing/6_pointJoin_FishingYrsDest_NormCumulative_train_test.R")
+# # input:      ./results_train/5_pts_FishingYrsDest_normalized.csv
+# #             ./results_test/5_pts_FishingYrsDest_normalized.csv   
+# # output:     ./results_train/6_pts_FishingYrs_destructive_cumulative.csv
+# #             ./results_test/6_pts_FishingYrs_destructive_cumulative.csv
+# 
 # ------------------------------------
 # join points with landscape metrics  
 # ------------------------------------
@@ -253,7 +253,7 @@ source("./bin_processing/9_pointJoin_IndpVarOther_train_test.R")
 
 # current file: 
 # calculated 3 versions in R - see code above in 00 section (updated to be reproducible)
-source("./bin_processing1/10_pointJoin_PopRsk_train_test.R")
+source("./bin_processing/10_pointJoin_PopRsk_train_test.R")
 # input:  ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train"
 #         ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test"               
 #         ./gis2/population_risk/pop_risk_dens_inhab_reef.tif
@@ -271,7 +271,7 @@ source("./bin_processing1/10_pointJoin_PopRsk_train_test.R")
 # ------------------------------------
 # join distance to nearest river to points -------
 # ------------------------------------
-source("./bin_processing1/11_pointJoin_river_distance_train_test.R")
+source("./bin_processing/11_pointJoin_river_distance_train_test.R")
 # input:  ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train"
 #         ./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test"               
 #         
@@ -282,7 +282,7 @@ source("./bin_processing1/11_pointJoin_river_distance_train_test.R")
 # ------------------------------------
 # merge all points together
 # ------------------------------------
-source("./bin_processing1/13_point_MergeAll_train_test.R") 
+source("./bin_processing/13_point_MergeAll_train_test.R") 
 # input:    MANY
 # output: ./results/IndpVar_Pts_RS.gpkg
 #         ./results/IndpVar_Pts_RS.csv
@@ -300,7 +300,7 @@ source("./bin_processing1/13_point_MergeAll_train_test.R")
 # ------------------------------------
 # organizing variables by categorical and numeric
 # ------------------------------------
-source("./bin_processing1/14_All_dataSetupA_train_test.R") 
+source("./bin_processing/14_All_dataSetupA_train_test.R") 
 # input:       ./results_train/13_IndpVar_Pts_all.csv
 # output:      ./results_train/14_IndpVar_Pts_train.csv
 
@@ -310,7 +310,7 @@ source("./bin_processing1/14_All_dataSetupA_train_test.R")
 # ------------------------------------
 # look at variables
 # ------------------------------------
-source("./bin_processing1/15_All_correlationsViz_train.R") 
+source("./bin_processing/15_All_correlationsViz_train_test.R") 
 # input:      ./results_train/14_IndpVar_Pts_train.csv
 # output:     ./doc/correlations_train_7_threshold.csv
 
@@ -323,7 +323,7 @@ source("./bin_processing1/15_All_correlationsViz_train.R")
 # run all data setup
 # calculate percent cover stats
 # ------------------------------------
-source("./bin_processing1/16_All_dataSetupB_train_test.R") # was 4
+source("./bin_processing/16_All_dataSetupB_train_test.R") # was 4
 # input: ./results_test/14_IndpVar_Pts_test.csv
 # output: ./results_test/16_IndpVar_Pts_test.csv
 #         ./doc/percentage_stats.csv
@@ -344,43 +344,50 @@ source("./bin_processing1/16_All_dataSetupB_train_test.R") # was 4
 # A. dredge full model ------------------------
 source("./bin_analysis/A_analysis.R")
 # input:  ./results_train/16_IndpVar_Pts_train.csv
-# output: ./results_train/mixedEf_final_all.R
-#         ./results_train/mixedEf_final_no_landscape.R
-#         ./results_train/mixedEf_final_all1.RData
-#         ./results_train/17_IndpVar_Pts_train_for_models_all.csv
-#         ./results_train/17_IndpVar_Pts_train_for_models_subset.csv
+# output: ./results_train/model_full.R                              # full model
+#         ./results_train/model_full_avg.rds                        # averaged full model
+#         ./results_train/model_no_landscape.R                      # no landscape model
+#         ./results_train/model_no_landscape_avg.rds                # averaged no landscape model
+#         ./results_train/17_IndpVar_Pts_train_for_models_all.csv   # modified dataset with no outliers, centered and scaled variables
+#         ./results_train/mixedEf_final_all1.RData")                # image of workspace
+#         ./results_train/mixedEf_final_all1_no_landscape.RData     # later image of workspace
 
-# B. Figure 3a - full model------------------------
-source("./bin_analysis/B_fig_3a_full_model.R")
-# input:  ./results_train/mixedEf_final_all.R
+# B. Figure 3a & b - full model and reduced ------------------------
+source("./bin_analysis/B_Fig3_2025.R")
+# input:  ./results_train/model_full_avg.rds
+#         ./results_train/model_no_landscape_avg.rds
 # output: ./doc/fig_3a_full_model.tif
 
 
-# B. Figure 3b - reduced model------------------------
-source("./bin_analysis/B_fig_3b_reduced_model.R")
+# B. Table 1. Full Model ------------------------
+source("./bin_analysis/B_Table1_2025.R")
 # input:  ./results_train/mixedEf_final_no_landscape.R
 # output: ./doc/fig_3b_reduced_model.tif
 
-# C. export residuals
-source("./bin_analysis/C_residuals_exporting_final_model.R")
-# input:  ./results_train/mixedEf_final_all.R
-#         ./results_train/mixedEf_final_no_landscape.R - not used
-#         ./results_train/15_IndpVar_Pts_train_for_models_subset.csv
-# output: ./results_train/full_model_residuals.csv
-#         ./results_train/full_model_residuals.shp
-#         ./results_train/full_model_residuals.gpkg
 
-# D. calculate wald scores
-source("./bin_analysis/D_TableS3_WaldScores_final_model.R")
-# input:  ./results_train/mixedEf_final_all.R
-# output: ./doc/TableS3_final_model_wald.csv
+# C. export residuals
+source("./bin_analysis/C_residuals_2025.R")
+# input:  ./results_train/model_full.R #full model
+#         ./results_train/model_no_landscape.R
+#         ../results_train/17_IndpVar_Pts_train_for_models_all.csv"
+# output: 
+#         ./results_train/full_model_residuals.csv #full model, no landscape variables
+#         ./results_train/full_model_residuals.shp
+#         ./results_train/full_model_residuals.gpkg, layer="model"
+#         ./results_train/full_model_residuals_data2.shp
+#         ./results_train/full_model_residuals2.gpkg", layer="all"
+
+# # D. calculate wald scores
+# source("./bin_analysis/D_TableS3_WaldScores_final_model.R")
+# # input:  ./results_train/mixedEf_final_all.R
+# # output: ./doc/TableS3_final_model_wald.csv
 
 
 # E. replace testing data in model
 source("./bin_analysis/E_analysis_testing_data.R")
-# input:  ./results_train/mixedEf_final_all.R") # full model
-#         ./results_train/mixedEf_final_no_landscape.R
-#         ./results_test/14_IndpVar_Pts_test.csv
+# input:  ./results_train/model_full.R #full model
+#         ./results_train/model_no_landscape.R
+#         ./results_test/16_IndpVar_Pts_test_all.csv
 # output: ./results_test/m_final_test_data.csv
 
 # graphs of predictive power

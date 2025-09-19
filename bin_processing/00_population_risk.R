@@ -125,7 +125,13 @@ range(villages$pop_dens)
 
 plot(villages)
 
+villages2<-villages%>%
+  tibble()
 
+# save 
+write_csv(villages2,"./doc/population_stats_2025.csv")
+range(villages2$pop_dens_km2_orig)
+range(villages2$pop_dens_km2_inhab)
 
 
 
@@ -307,7 +313,7 @@ writeRaster(d2c, "./gis2/population_risk/pop_risk_dens_inhab_fa.tif", overwrite=
 writeRaster(d3c, "./gis2/population_risk/pop_risk_pop_fa.tif", overwrite=TRUE)
 
 #  villages with updated population information
-st_write(villages,"./results/./results/basic_files.gpkg.gpkg",layer="barangay_pop2010_area",delete_layer = T)
+st_write(villages,"./results/basic_files.gpkg",layer="barangay_pop2010_area",delete_layer = T)
 
 st_write(villages,"./gis2/population/barangay_pop2010_area.shp",delete_layer = T)
 

@@ -31,11 +31,18 @@ remove(list=ls())
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 
 # ----------------------------------------------------------
-#read in gpkg layer of random points 
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
+#read in random points - # update this name if change sampling number and distance
+
+# train --------
+# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train_extra_pts100")%>% 
+#   glimpse()
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # 
   glimpse()
+
+# test ------
 pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
+
 
 
 # ----------------------------------------------------------

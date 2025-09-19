@@ -25,13 +25,18 @@ remove(list=ls())
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
 
 # -------------------------------------------
-#read in gpkg layer of random points 
-# train --
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
+#read in random points - # update this name if change sampling number and distance
+
+# train --------
+# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train_extra_pts100")%>% 
+#   glimpse()
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # 
   glimpse()
-#test
+
+# test ------
 pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
+
 ############################
 # Task 1.2 load shapefiles with indp data 
 
@@ -67,12 +72,12 @@ v1p_te<- as.data.frame(v1p_s_te)%>%
   glimpse()
 
 
-#2. Ecol Zones - not including olango
-v2<-st_read("./gis2/ecological_zones/EcoZones3_DB.shp")%>% #EcologicalZones_FA_Land_20160810.shp")%>% # was EcoZones2 - created one more zone for coastal side of inner reef because similar to coastal
-  select(ecological_zone=EcoZone2,ecological_zone_id=EcoZ_Id2)%>%
+#2.various versions have different numbers of classes
+v2<-st_read("./gis2/ecological_zones/EcoZones2_DB.shp")%>% 
+  dplyr::select(ecological_zone=eco_zone2,ecological_zone2=eco_zn2_id,)%>%
   glimpse()
   
-unique(v2$EcoZone2)
+unique(v2$ecological_zone)
 
 
 # extract polygon data to points
@@ -112,10 +117,11 @@ v3p_te <- pts_te%>%
 
 
 #4. MPAs in focal area (FA)
-v4<-st_read("./gis2/mpa/MPA_FA_20160525_3.shp")%>%
+v4<-st_read("./gis2/mpa/MPA_FA_20160525_4_50m_buf.shp")%>% # was: MPA_FA_20160525_3.shp - updated to include 50m buffer
   mutate(mpa=if_else(Id_binary==601,"protected","unprotected"))%>%
   dplyr::select(mpa,mpa_id=Id,mpa_name=NAME,mpa_desig=DESIG,mpa_status=STATUS,mpa_area_ha=AREA_R_HA,mpa_barangay=Brgy)%>%
   glimpse()
+
 
 # extract polygon data to points
 # train --

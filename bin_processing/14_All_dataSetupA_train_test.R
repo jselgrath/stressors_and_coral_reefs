@@ -26,7 +26,7 @@ d0_te<-read_csv("./results_test/13_IndpVar_Pts_all.csv")%>%
 #train
 d1<-d0%>%
   dplyr::select(point_id:resilience_id,
-                Depth1,ecological_zone:ecological_zone_id,geomorphology, 
+                Depth1,ecological_zone:ecological_zone2,geomorphology, 
                 mpa:mpa_status,mpa_barangay,Id_MunWtr,# character
          Depth_m,mpa_area_ha,all_1960_nrmA:y)%>% # numbers
   glimpse()
@@ -34,7 +34,7 @@ d1<-d0%>%
 # test
 d1_te<-d0_te%>%
   dplyr::select(point_id:resilience_id,
-                Depth1,ecological_zone:ecological_zone_id, geomorphology, 
+                Depth1,ecological_zone:ecological_zone2, geomorphology, 
                 mpa:mpa_status,mpa_barangay,Id_MunWtr,# character
                 Depth_m,mpa_area_ha,all_1960_nrmA:y)%>% # numbers
    glimpse()

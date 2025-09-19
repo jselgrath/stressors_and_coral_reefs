@@ -18,11 +18,11 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 # -------------------------------------------
 # EcoZone2
-d1<-st_read("./gis2/ecological_zones/EcoZones2_DB.shp")%>% glimpse()
+d1<-st_read("./gis2/ecological_zones/EcoZones1_DB.shp")%>% glimpse()
 plot(d1)
 
 # all fishing effort
-files = list.files("./gis2/fishing/effort",pattern='\\.tif$', full.names = TRUE)%>%
+files = list.files("./gis2/fishing/effort_fa",pattern='\\.tif$', full.names = TRUE)%>%
   glimpse()
 files2<-files[1] # manually check - should be all_YEAR 1960-2010
 files2

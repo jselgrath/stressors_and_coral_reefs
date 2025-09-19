@@ -63,9 +63,9 @@ crs_utm51 <- 32651   # EPSG code
 # change projection to equal area
 d1_proj <- st_transform(d1, crs_laea)
 
-# Compute area by status of MPAs to ensure samples in MPAs ---------------------
+# Compute area by status of MPAs and habitats to ensure samples in MPAs and enough samples in rubble in inner areas ---------------------
 status_area <- d1_proj %>%
-  group_by(status) %>%
+  group_by(status,hab_reclass) %>%
   summarise(total_area = sum(st_area(geom))) %>%
   ungroup()
 
@@ -114,7 +114,7 @@ sample_points_stratum <- function(polygon, n_points, min_dist) {
 
 
 # TRAIN -------------------
-set.seed(123) # train
+set.seed(333) # train
 
 # Loop over strata
 points_list_train <- list()

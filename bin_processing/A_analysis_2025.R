@@ -78,6 +78,11 @@ library(colorspace)
 library(spdep)
 library(lattice)
 library(adespatial)
+library(spatialreg)
+library(sjPlot)
+library(lme4)
+library(visreg)
+library(officer)
 
 
 # -------------------------------------------
@@ -92,24 +97,18 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # load data and organize variables
 # ---------------------------------------------
 d0<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>%
-  
-  #set fishing =NA to 0
-  
-  # adjusting depth
-  mutate(Depth_m=if_else(Depth_m<0,Depth_m,-.1), # one value above water 
-  
-  # made depth positive for easier interpretation
-  Depth_m=Depth_m*-1)%>%  
-  
-  # make factors
-  mutate(MPA=as.factor(mpa), 
+
+  mutate(Depth_m=if_else(Depth_m<0,Depth_m,-.1),   # adjusting depth # one value above water 
+  Depth_m=Depth_m*-1)%>%   # made depth positive for easier interpretation
+  mutate(MPA=as.factor(mpa_id),     # make factors
          ecological_zone=as.factor(ecological_zone),
+         ecological_zone2=as.factor(ecological_zone2), # not updated
          geomorphology=as.factor(geomorphology),
          Reef_state=resilience_id
          )%>%
   glimpse()
 
-
+d0$ecological_zone
 
 # check depth representation # ---------------------------------------------
 range(d0$Depth_m)
@@ -135,16 +134,23 @@ d0$Depth_m[d0$point_id==815]<-5 # atoll that the depth modeling missed
 
  
 # remove NAs and make extreme depths shallower  
-d1<-d0%>%
+d1<-d0 %>%
   # make extreme depth shallower - assuming spline errors
-  mutate(Depth_m=if_else(Depth_m>-15,Depth_m,-15)) #~8 deep outliers - probably misclassified in depth map. 8 at 15m slightly more at 12
-d1<-data.frame(na.omit(d1))# 13 NAs -  in population risk variables 
+  mutate(Depth_m=if_else(Depth_m>-15,Depth_m,-15))%>%#~8 deep outliers - probably misclassified in depth map. 8 at 15m slightly more at 12
+  
+  #remove outliers 
+# this group is in deep water or sand dominated
+  filter(point_id!=687,point_id!=1037, point_id!=511, point_id!=1236,point_id!=266, point_id!=802)%>%
+  glimpse()
+
+d1<-data.frame(na.omit(d1))%>%# 13 NAs -  in population risk variables 
+    glimpse()
 
 
+d1%>%
+   ggplot(aes(x,y,color=Reef_state))+geom_point()#+geom_label(aes(label = point_id), nudge_y=0.2)
 
-
-
-
+plot(d1$ecological_zone)
 
 
 # ---------------------------------------------
@@ -157,21 +163,27 @@ d1<-data.frame(na.omit(d1))# 13 NAs -  in population risk variables
 # ---------------------------------------------
 # center and scale function
 # ---------------------------------------------
-cs.<- function(x) scale(x,center=FALSE,scale=TRUE)
+cs.<- function(x) scale(x,center=TRUE,scale=TRUE)
 
 # run cs fxn on variables
 d1$depth<-as.numeric(cs. (d1$Depth_m))
 d1$sg<-as.numeric(cs. (d1$point_dist_Seagrass))
 d1$mg<-as.numeric(cs. (d1$point_dist_Mangrove))
+d1$river<-as.numeric(cs. (d1$point_dist_river))
 d1$psi<-as.numeric(cs. (d1$patch_shape_index))
 d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))
 d1$fishing_30lag<-as.numeric(cs. (d1$lag_all_30))
+d1$fishing_20lag<-as.numeric(cs. (d1$lag_all_20))
+d1$fishing_10lag<-as.numeric(cs. (d1$lag_all_10))
+d1$fishing10<-as.numeric(cs. (d1$cumulative_all_00))
+d1$fishing20<-as.numeric(cs. (d1$cumulative_all_10))
 d1$blast10<-as.numeric(cs. (d1$cumulative_blast_10))
 d1$poison10<-as.numeric(cs. (d1$cumulative_poison_10))
 d1$pr<-as.numeric(cs. (d1$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
 
 
+d1$psi2<- -1*d1$psi
 # ---------------------------------------------
 # precompute interactions
 # ---------------------------------------------
@@ -198,7 +210,7 @@ coords<-as.matrix(d1[, c("x", "y")])
 # knn2nb() Converts the nearest-neighbor object from knearneigh() into an nb object (neighbor list) that can be used in spatial weights (nb2listw()
 # If you want one fully connected graph (since there are subgraphs), switch to dnearneigh() with a radius chosen to cover the gaps.
 
-nb <- knn2nb(knearneigh(coords, k = 5)) # 5 nearest neighbors # Warning: "neighbour object has 3 sub-graphs" - points form disconnected groups (clusters), so some parts of the neighbor graph are not connected to others. Here probably the three ecological zones → so you get multiple "sub-graphs". It’s not necessarily an error — it’s telling you the spatial graph is not fully connected.Moran’s I still works, but it’s applied within those sub-graphs.
+nb <- knn2nb(knearneigh(coords, k = 7)) # 7 nearest neighbors # Warning: "neighbour object has 3 sub-graphs" - points form disconnected groups (clusters), so some parts of the neighbor graph are not connected to others. Here probably the three ecological zones → so you get multiple "sub-graphs". It’s not necessarily an error — it’s telling you the spatial graph is not fully connected.Moran’s I still works, but it’s applied within those sub-graphs.
 
 
 # Convert to spatial weights
@@ -232,24 +244,23 @@ f_sp_autocor <- function(data,model) {
 # ---------------------------------------------
 
 # base function # ---------------------------
-fxn1<-as.formula(Reef_state ~ 
-              depth+
-              sg+
-              I(sg^2)+# sg2+
-              psi+
-              pr_inhab+
-              pr+ # OR point_dist_Mangrove or river_distance
-              # mg+
-              # river_distance+
-              fishing_30lag+
-              blast10+
-              poison10+
-              I(pr_inhab*fishing_30lag)+
-              I(pr_inhab*blast10)+
-              I(pr_inhab*pr)+
-              MPA+
-              ecological_zone+
-              geomorphology)
+var1<-Reef_state ~ 
+  depth+
+  sg+
+  I(sg^2)+
+  psi2+
+  pr_inhab+
+  # pr+ # OR point_dist_Mangrove or river_distance
+  # mg+
+  river+
+  fishing_30lag+
+  blast10+
+  pr_inhab:fishing_30lag+
+  pr_inhab:blast10+
+  MPA+
+  ecological_zone2
+
+fxn1<-as.formula(var1)
 
 
 
@@ -260,58 +271,260 @@ m1<-glm(fxn1,
         na.action = "na.fail")        # required by dredge
 Anova(m1)
 summary(m1)
+r1<-residuals.glm(m1, type="pearson")
+r1
+
+d1_r<-cbind(d1,r1)
+
+d1_r%>%
+  filter(abs(r1)>2.5)%>%
+  ggplot(aes(x,y,color=r1, size=abs(r1)))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+d1_r%>%
+  filter(abs(r1)>2.5)
 
 
-
-# check for spatial autocorrelation -----------------------------------------
+# Plant methods to check for best model with spatial autocorrelation  -----------------------------------------
 m1_sac<-f_sp_autocor(data=d1,model=m1);m1_sac
+# autocorrelated - one method for addressing this is mixed effects models (see Plant 2020)
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------
+# GLMER
+# --------------------------------
+# base function # ---------------------------
+var2<-Reef_state ~ 
+  depth+
+  sg+
+  I(sg^2)+# sg2+
+  psi2+
+  pr_inhab+ # pop, mg, river distance 
+  # pr+ # OR point_dist_Mangrove or river_distance
+  # mg+
+  river+
+  fishing_30lag+
+  blast10+
+  pr_inhab:fishing_30lag+
+  pr_inhab:blast10+
+  MPA+
+  (1|ecological_zone) 
+fxn2<-as.formula(var2)
+
+
+# glmer full model ----------------
+m_all<-lme4::glmer(fxn2,
+                   family=binomial(link=logit), data=d1, na.action = "na.fail")
+
+summary(m_all)
+Anova(m_all)
+tab_model(m_all, show.df = TRUE)
+plot_model(m_all, vline.color = "lightgrey")
+
+r_all<-residuals(m_all, type="pearson")
+r_all
+
+d1_m_all_r<-cbind(d1,r_all)
+
+
+# ---------------------------------------------
+# OUTLIERS - all
+# ---------------------------------------------
+# table of residuals and IDs. use a cutoff of residuals ±1.96
+# https://stats.stackexchange.com/questions/196724/how-to-identify-outliers-and-do-model-diagnostics-for-an-lme4-model
+# https://stackoverflow.com/questions/24268031/unscale-and-uncenter-glmer-parameters?rq=1
+# ---------------------------------------------
+
+# plot residuals for m_all ------------------------
+r_all<-residuals(m_all, type="pearson")
+r_all
+
+d1_m_all_r<-cbind(d1,r_all)
+
+
+
+# graph residuals
+d1_m_all_r%>%
+  filter(abs(r_all)>4)%>%
+  ggplot(aes(x,y,color=r_all))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+d1_m_all_r%>%
+  filter(abs(r_all)>2.5)%>%
+  ggplot(aes(x,y,color=r_all))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+d1_m_all_r%>%
+  # filter(abs(r_all)>2.5)%>%
+  ggplot(aes(x,y,color=r_all))+geom_point()
+
+
+# remove  large residuals
+d1_m_all_r%>%
+  filter(abs(r_all)>2.5)%>%dplyr::select(point_id)
+  
+d2<-d1%>%
+  filter(point_id!=17&point_id!=63&point_id!=83&point_id!=132&point_id!=145&point_id!=154)%>%
+  filter(point_id!=173&point_id!=180&point_id!=269&point_id!=323&point_id!=370&point_id!=381&point_id!=388)%>%
+  filter(point_id!=476&point_id!=483&point_id!=578)%>%
+  filter(point_id!=606&point_id!=611)%>%
+  filter(point_id!=658&point_id!=717&point_id!=788&point_id!=795)%>%
+  filter(point_id!=817&point_id!=898&point_id!=900&point_id!=1077&point_id!=1096&point_id!=1203&point_id!=1228)%>%
+  filter(point_id!=1246&point_id!=1284&point_id!=1307&point_id!=1371&point_id!=1383&point_id!=1389)%>%
+  filter(point_id!=1408&point_id!=1412&point_id!=1433&point_id!=1443&point_id!=1445&point_id!=1464)%>%
+  filter(point_id!=1488)%>%
+  glimpse()
+
+
+# re-run cs fxn on variables
+d2$depth<-as.numeric(cs. (d2$Depth_m))
+d2$sg<-as.numeric(cs. (d2$point_dist_Seagrass))
+d2$mg<-as.numeric(cs. (d2$point_dist_Mangrove))
+d2$river<-as.numeric(cs. (d2$point_dist_river))
+d2$psi<-as.numeric(cs. (d2$patch_shape_index))
+d2$pr_orig<-as.numeric(cs. (d2$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
+d2$pr_inhab<-as.numeric(cs. (d2$pop_risk_dens_inhab))
+d2$fishing_30lag<-as.numeric(cs. (d2$lag_all_30))
+d2$fishing_20lag<-as.numeric(cs. (d2$lag_all_20))
+d2$fishing_10lag<-as.numeric(cs. (d2$lag_all_10))
+d2$fishing10<-as.numeric(cs. (d2$cumulative_all_00))
+d2$fishing20<-as.numeric(cs. (d2$cumulative_all_10))
+d2$blast10<-as.numeric(cs. (d2$cumulative_blast_10))
+d2$poison10<-as.numeric(cs. (d2$cumulative_poison_10))
+d2$pr<-as.numeric(cs. (d2$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
+
+
+d2$psi2<- -1*d2$psi
 
 
 
 
-#----------------------------------------
-# Dredge to find best model #-------------
-#----------------------------------------
-d1_dredge <- dredge(m1, rank = "AIC") # or AICc, but unlikely small sample size issue
-
-# Best model
-m2 <- get.models(d1_dredge, subset = 1)[[1]]
-summary(m2)
-
-# Residual check for best dredge model
-m2_results <- glm(formula(m2), data=d1, 
-                  family=binomial(link=logit), 
-                  na.action = "na.fail")
-
-summary(m2_results)
-Anova(m2_results)
-
-# inspect top models
-head(m2, 10)
+# save modified dataset (centered/scaled, outliers removed) -----------------------
+write_csv(d2,"./results_train/17_IndpVar_Pts_train_for_models_all.csv")
 
 
-# Autocorrelation of top dredge model -------------------
-m2_sac<-f_sp_autocor(data=d1,model=m2);m2_sac
+# -----------------------------------------------
+# Fit the  global model with reduced outliers
+# -----------------------------------------------
+m_all2<-lme4::glmer(fxn2,
+                    family=binomial(link=logit), data=d2, na.action = "na.fail")
+summary(m_all2)
+Anova(m_all2)
+tab_model(m_all2, show.df = TRUE)
+plot_model(m_all2, vline.color = "lightgrey")
 
-# family = binomial, the coefficients are on the log-odds scale. exponentiate them to get odds ratios:
-exp(coef(m_avg))
+
+# Conditional R2 is the amount of explained variance for the entire model. In this case, both the fixed and random effects explain 77.8% of the variance of the outcome. The marginal R2 explains how much of this variance is attributed to the fixed effects alone- here 40.7%
+
+# visually inspect residuals ------------------
+# pull  residuals from model -------------------
+r_all2<-residuals(m_all2, type="pearson") # pearson for GLM
+r_all2
+
+d2_m_all2_r<-cbind(d2,r_all2)
+
+
+# ---------------------------------------------
+# OUTLIERS
+# ---------------------------------------------
+# plot residuals for m_all2 ------------------------
+d2_m_all2_r%>%
+  filter(abs(r_all2)>4)%>%
+  ggplot(aes(x,y,color=r_all2))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+d2_m_all2_r%>%
+  filter(abs(r_all2)>3.5)%>%
+  ggplot(aes(x,y,color=r_all2))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
+
+
+d2_m_all2_r%>%
+  filter(abs(r_all2)>1.96)%>%
+  ggplot(aes(x,y,color=r_all2))+geom_point()#+geom_label(aes(label = point_id), nudge_y=0.2)
+
+
+d2_m_all2_r%>%
+  # filter(abs(r_all)>2.5)%>%
+  ggplot(aes(x,y,color=r_all2))+geom_point()
+
+
+# ---------------------------------------------
+# check model - all2
+# ---------------------------------------------
+qqmath(ranef(m_all2)) 
+qqmath(fixef(m_all2))
+coef(m_all2) # reults of fixed and random effects add to coef
+fixef(m_all2)  #estimated averages over the eco zones # average coefficents
+ranef(m_all2) # group level errors for intercepts and slopes
+
+# visualize aspects of  model ------------------------
+visreg(m_all2,"depth","ecological_zone", xlab="Depth",ylab="Reef State")
+visreg(m_all2,"psi2","ecological_zone", xlab="Patch compactness",ylab="Reef State")
+visreg(m_all2,"sg","ecological_zone", xlab="Seagrass isolation",ylab="Reef State")
+visreg(m_all2,"pr_inhab","ecological_zone", xlab="Population_risk",ylab="Reef State")
+visreg(m_all2,"fishing_30lag","ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
+visreg(m_all2,"blast10","ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
+
+
+# -------------------------------
+# Dredge models and average
+# -------------------------------
+
+# https://uoftcoders.github.io/rcourse/lec09-model-selection.html
+# less than 2 are considered to be just as good as the top model and thus we shouldn’t just discount them
+
+m_all_set<-dredge(m_all2, rank = "AIC")
+head(m_all_set)
+
+
+# Get top model --------------------
+top_model <- get.models(m_all_set, subset = 1)[[1]]
+top_model
+
+# Get models with <2 delta AICc - all --------------------
+top_m1 <- get.models(m_all_set,subset = delta<=2)
+top_m1
+# 
+
+# model averaging # -----------------------------------
+
+# The “full” coefficients are thus more conservative and it is best practice to interpret these
+m1_avg <- model.avg(top_m1,cumsum(weight) <= .95, fit = TRUE, subset = delta < 2) # fit = TRUE makes model.avg() keep fitted models
+m1_avg
+
 
 # -----------------------------------
-# model averaging
+# -- SAVE --------------
+# -----------------------------------
 
-m_avg <- model.avg(d1_dredge, subset = delta < 2)
-summary(m_avg)
-importance(m_avg)
+# save full model to file -----------
+save(m_all2,file="./results_train/model_full.R")
 
-# exponate coefficents
-ec_m1<-exp(coef(m_avg))
+# Save averaged model to file
+saveRDS(m1_avg, file = "./results_train/model_full_avg.rds")
 
-ec_sac<-f_sp_autocor(data=d1,model=m_avg)
+#save image to set options for probabilities in GT
+save.image("./results_train/mixedEf_final_all1.RData")
 
-# output from model averaging ------------------------------------
+# or load image...
+# load("./results_train/mixedEf_final_all1.RData")
+
+
+
+
+
+# -----------------------------------
+# interpreting output from model averaging 
+# -----------------------------------
+cof<-data.frame(m1_avg$coefficients[1,]) # full
+cof
+summary(m1_avg)            # shows (full average) & (conditional average)
+
+
+coef_full <- coef(m1_avg, full = TRUE)      # Extract full-model average coefficients.  # estimated intercepts for each eco zone # see gelman and hill p303
+
+summary(m1_avg, full = TRUE)$coefmat.full   # full model average with SE, z, p
+confint(m1_avg, full = TRUE)                # 95% CI for full model average
+
+
+
+
 # df = number of estimated parameters
 # logLik = log-likelihood of the model
 # AICc = corrected Akaike Information Criterion
@@ -331,193 +544,43 @@ ec_sac<-f_sp_autocor(data=d1,model=m_avg)
 
 
 
+# --------------------------------------------------
+#  -- MODEL WITH NO LANDSCAPE VARIABLES ------------
+# without landscape var (used this because landscape variables are usually not included in coral surveys. Used for analysis in paper, but not included here.)
+# --------------------------------------------------
 
+# function ----------
+var3<-Reef_state ~ 
+  depth+
+  pr_inhab+ 
+  fishing_30lag+
+  blast10+
+  pr_inhab:fishing_30lag+
+  pr_inhab:blast10+
+  MPA+
+  (1|ecological_zone) 
 
+fxn3<-as.formula(var3)
 
+#  -- run model with no landscape var ----------------------
+m_all3<-lme4::glmer(fxn3,
+                   family=binomial(link=logit), data=d2, na.action = "na.fail")
 
-#---------------------------------------
-# Example 1: Full model m1
-#---------------------------------------
-#----------------------------------------
-# Step 1: Full model m1
-#----------------------------------------
-m1_results <- fit_and_check(fxn1, d1, "m1")
-
-summary(m1_results$model_m1)
-m1_results$moran_m1
-m1_results$dharma_m1
-
-#----------------------------------------
-# Step 2: Dredge to find best model
-#----------------------------------------
-m1<-m1_results$model_m1
-d1_dredge <- dredge(m1, rank = "AIC")
-
-# Best model = m2
-m2 <- get.models(d1_dredge, subset = 1)[[1]]
-
-# Residual check for best dredge model
-m2_results <- fit_and_check(formula(m2), d1, "m2")
-
-summary(m2_results$model_m2)
-m2_results$moran_m2
-m2_results$dharma_m2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# check for outliers -------------------------------
+summary   (m_all3)
+tab_model (m_all3, show.df = TRUE) 
+plot_model(m_all3, vline.color = "lightgrey") 
 
 # ---------------------------------------------
-# OUTLIERS - all
+# check model - all3
 # ---------------------------------------------
-# table of residuals and IDs. use a cutoff of residuals ±1.96
-# https://stats.stackexchange.com/questions/196724/how-to-identify-outliers-and-do-model-diagnostics-for-an-lme4-model
-# https://stackoverflow.com/questions/24268031/unscale-and-uncenter-glmer-parameters?rq=1
-# ---------------------------------------------
-# view(cbind(residuals(m_all),d1$PtID2)) # outlier at point_id=1384
-m1<-m1_results$model_m1
-range(residuals(m1,type="pearson")) # pearson for GLM
+qqmath(ranef(m_all3))
+qqmath(fixef(m_all3))
 
-# ran this iteratively with m_all2 & d4
-outliers<-data.frame(cbind(residuals(m1,type="pearson"),d1$point_id))%>%
-  mutate(residuals=X1,
-         point_id=X2)%>%
-  dplyr::select(-X1,-X2)%>%
-  filter(abs(residuals)>2.5)%>%
-  # filter(residuals<(-2))%>% #removed 3 more
-  # filter(abs(residuals)>2)%>%
-  arrange(-abs(residuals))%>% 
-  glimpse()
-
-outliers
-outliers$point_id # 28 bigger than 2.5
-
-# point_id=147 590 636 119 579 819 856 745 694 190 708 807 105 721 709 238 125 442 685 658 712 675 772 781 661 451 371  14 # remove
-
-# look at spatially - many in NE
-outliers2<-outliers%>%
-  left_join(d1)%>%
-  glimpse()
-
-# plot outliers - all places with coral
-ggplot(outliers2,aes(x,y,color=as.factor(Reef_state),shape=geomorphology ))+geom_point()
-ggplot(outliers2,aes(x,y,color=Depth_m,size=residuals ))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-m_all<-lme4::glmer(Reef_state ~ 
-                     cs.(Depth_m) +
-                     cs.(point_dist_Seagrass)+ 
-                     cs.(I(point_dist_Seagrass^2))+
-                     cs.(-patch_shape_index)+
-                     cs.(pop_risk_dens_orig)+ #pop_risk_dens_inhab
-                     cs.(lag_all_30)+
-                     cs.(cumulative_blast_10)+
-                     cs.(pop_risk_pop)+  # or point_dist_Mangrove or river_distance.nrm or river_distance
-                     cs.(pop_risk_dens_orig):cs.(lag_all_30)+
-                     cs.(pop_risk_dens_orig):cs.(cumulative_blast_10)+ 
-                     MPA+
-                     # Geomorphic2+
-                     (1|ecological_zone), 
-                family=binomial(link=logit), data=d1, na.action = "na.fail")
-
-summary(m_all)
-Anova(m_all)
-tab_model(m_all, show.df = TRUE) 
-plot_model(m_all, vline.color = "lightgrey") 
-
-# ---------------------------------------------
-# check model - all
-# ---------------------------------------------
-qqmath(m_all) 
-qqmath(ranef(m_all))
-
-
-
-  
-m_all2<-lme4::glmer(Reef_state ~ 
-                      cs.(Depth_m) +
-                      # cs.(sg_minDist_100)+
-                      cs.(I(sg_minDist_100^2))+
-                      cs.(-SHAPE)+
-                      cs.(PopRskDecay.Nrm)+
-                      cs.(lag_all_30)+
-                      cs.(cumulative_FA_blast10)+
-                      cs.(PopRskDecay.Nrm):cs.(lag_all_30)+
-                      cs.(PopRskDecay.Nrm):cs.(cumulative_FA_blast10)+ 
-                      MPA+
-                      # Geomorphic2+
-                     (1|ecological_zone), 
-                   family=binomial(link=logit), data=d4, na.action = "na.fail")
-
-summary(m_all2)
-Anova(m_all2)
-tab_model(m_all2, show.df = TRUE) 
-plot_model(m_all2, vline.color = "lightgrey") 
-
-
-# ---------------------------------------------
-# check model - all
-# ---------------------------------------------
-qqmath(m_all2) 
-qqmath(ranef(m_all2))
+# visualize aspects of final model, no landscape ------------------------
+visreg(m_all3,"depth","ecological_zone", xlab="Depth",ylab="Reef State")
+visreg(m_all3,"pr_inhab","ecological_zone", xlab="Population_risk",ylab="Reef State")
+visreg(m_all3,"fishing_30lag","ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
+visreg(m_all3,"blast10","ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
 
 
 # ---------------------------------------------
@@ -528,216 +591,84 @@ qqmath(ranef(m_all2))
 
 # less than 2 are considered to be just as good as the top model and thus we shouldn’t just discount them
 
-m_all_set<-dredge(m_all2, rank = "AICc")
-head(m_all_set)
+m_all_set3<-dredge(m_all3, rank = "AIC")
+head(m_all_set3)
 
 
 # Get top model --------------------
-top_model <- get.models(m_all_set, subset = 1)[[1]]
-top_model
+top_model3 <- get.models(m_all_set3, subset = 1)[[1]]
+top_model3
 
 # Get models with <2 delta AICc - all --------------------
-top_m1 <- get.models(m_all_set,subset = delta<2)
-top_m1
+top_m3 <- get.models(m_all_set3,subset = delta<2)
+top_m3
+# 
 
-# average top models - all -------------------------
+# model averaging # -----------------------------------
+
 # The “full” coefficients are thus more conservative and it is best practice to interpret these
-# m1_avg <- model.avg(top_m1,cumsum(weight) <= .95, fit = TRUE)
-# cof<-data.frame(m1_avg$coefficients[1,])
-# NOTE: TOP MODEL IS ONLY ONE WITH delta<2 - no need to average
-
-
-# plot averaged model - all ----------------------
-# tab_model(m1_avg, show.df = TRUE) 
-# plot_model(m1_avg, vline.color = "lightgrey") 
-
-
-# compared with and without log transformations - ns so removed from code above
-# anova(m_all2,m_all2_nl) #ns
-
-
-
-
-
-################################################
-# --------------------------------------
-# residual diagnostics 
-# --------------------------------------
-################################################
-
-# calculates calculates randomized quantile residuals
-
-# scaled residual value of 0.5 means that half of the simulated data are higher than the observed value, and half of them lower
-
-# For a correctly specified model we would expect asymptotically 1) # a uniform (flat) distribution of the scaled residuals, 2) # uniformity in y direction if we plot against any predictor.
-
-
-# --------------------------------------
-# SET MODEL HERE - NEED TO MANUALLY UPDATE
-# --------------------------------------
-
-
-# set model - all ----------------------------
-fittedModel<-m_all2
-d_fitted<-d4
-
-
-
-# --------------------------------------
-# Simulations 
-# --------------------------------------
-# DHARMa: It is therefore highly recommended to first calculate the residuals once, using the simulateResiduals() function
-
-simulationOutput <- simulateResiduals(fittedModel = fittedModel, plot = F) 
-# residuals(simulationOutput)
-plot(simulationOutput) # By default, plotResiduals plots against predicted values
-
-
-# against numeric predictors
-plotResiduals(simulationOutput, form = cs.(d_fitted$Depth_m))
-plotResiduals(simulationOutput, form = cs.(d_fitted$sg_minDist_100)) # not normal - maybe over dispersed?
-plotResiduals(simulationOutput, form = cs.(d_fitted$PopRskDecay.Nrm))
-plotResiduals(simulationOutput, form = cs.(d_fitted$lag_all_30))
-plotResiduals(simulationOutput, form = cs.(d_fitted$cumulative_FA_blast10)) # not normal - maybe over dispersed?
-# plotResiduals(simulationOutput, form = cs.(log(d_fitted$CoRuEdg2Area+1)))
-# against factors
-plotResiduals(simulationOutput, form = (d_fitted$MPA))
-# plotResiduals(simulationOutput, form = (d_fitted$Geomorphic2))
-
-
-# test dispersions 
-testDispersion(fittedModel)
-
-
-
-
-
-
-
-
-# -------------------------------------------------------------
-# old graphs
-#sjp.glmer(m1, type = "re.qq") #graphing for a QQ-plot of random effects (random effects quantiles against standard normal quantiles)
-# plot_model(m1, type = "fe.pc") # sjp.glmer(m1, type = "fe.pc") #fixed effects
-# sjp.glmer(m1, type = "ri.pc", facet.grid = FALSE) #random effects1
-# sjp.glmer(m1,y.offset = .4,fade.ns=T) #random effects2
-# sjp.glmer(m1,type="fe", expand.grid = TRUE, geom.colors = c("black","black"), axis.title= "Odds Ratio", fade.ns=T)
-# ----------------------------------------------------------
-
-
-
-
-################
-# Final Models: Full model and model with no landscape variables
-#################
-
-# subset data, clean data names ----------------------------
-d5<-d4%>%
-  mutate(Depth=cs.(Depth_m)[,1], # [,1] calls it out of the matrix
-         Seagrass_isolation=cs.(I(sg_minDist_100^2))[,1],
-         # Seagrass_isolation=cs.(sg_minDist_100)[,1],
-         # Patch_complexity=cs.(SHAPE)[,1],
-         Patch_compactness=cs.(-SHAPE)[,1],
-         Population_risk=cs.(PopRskDecay.Nrm)[,1],
-         Fishing_legacy_1980_2000=cs.(lag_all_30)[,1],
-         Blast_fishing_2010_2000=cs.(cumulative_FA_blast10)[,1])%>%
-  dplyr::select(
-    Reef_state,Depth, Seagrass_isolation,Patch_compactness,Population_risk,
-    Fishing_legacy_1980_2000,Blast_fishing_2010_2000,MPA,Ecological_zone=ecological_zone,x,y,PtID2)%>%
-  glimpse()
-
-
-
-
-# final full model ----------------------------
-m_final<-lme4::glmer(Reef_state ~ 
-                       Depth+
-                       # Patch_complexity+
-                       Patch_compactness+
-                       Seagrass_isolation+
-                       Population_risk+
-                       Fishing_legacy_1980_2000+
-                       Blast_fishing_2010_2000+
-                       Population_risk:Fishing_legacy_1980_2000+
-                       Population_risk:Blast_fishing_2010_2000+ 
-                       MPA+
-                       # Geomorphic+
-                       (1|Ecological_zone), 
-                     family=binomial(link=logit), data=d5, na.action = "na.fail")
-
-summary   (m_final)
-tab_model (m_final, show.df = TRUE) 
-plot_model(m_final, vline.color = "lightgrey") 
-t1<-tab_model (m_final, show.df = TRUE)%>%
-  glimpse()
-
-arm::display(m_final)
-
-o1<-arm::display(m_final)
-str(o1)
-
-coef(m_final)  # estimated intercepts for each eco zone # see gelman and hill p303
-fixef(m_final) #estimated averages over the eco zones # average coefficents
-ranef(m_final) # group level errors for intercepts and slopes
-# results of fixef and ranef add up to coef
-
-# writm_final# write_csv(t1 ,"./doc/final_model_stats.csv")
-
-# visualize aspects of final model ------------------------
-visreg(m_final,"Depth","Ecological_zone", xlab="Depth",ylab="Reef State")
-visreg(m_final,"Patch_compactness","Ecological_zone", xlab="Patch compactness",ylab="Reef State")
-visreg(m_final,"Seagrass_isolation","Ecological_zone", xlab="Seagrass isolation",ylab="Reef State")
-visreg(m_final,"Population_risk","Ecological_zone", xlab="Population_risk",ylab="Reef State")
-visreg(m_final,"Fishing_legacy_1980_2000","Ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
-visreg(m_final,"Blast_fishing_2010_2000","Ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
-
-# above, without landscape var (used this because landscape variables are usually not included in coral surveys. Used for analysis in paper, but not included here.)
-m_final_no_landscape<-lme4::glmer(Reef_state ~ 
-                       Depth+
-                         # Patch_complexity+
-                         # Patch_compactness+
-                       # Seagrass_isolation+
-                       Population_risk+
-                       Fishing_legacy_1980_2000+
-                       Blast_fishing_2010_2000+
-                       Population_risk:Fishing_legacy_1980_2000+
-                       Population_risk:Blast_fishing_2010_2000+ 
-                       MPA+
-                       # Geomorphic+
-                       (1|Ecological_zone), 
-                     family=binomial(link=logit), data=d5, na.action = "na.fail")
-
-summary   (m_final_no_landscape)
-tab_model (m_final_no_landscape, show.df = TRUE) 
-plot_model(m_final_no_landscape, vline.color = "lightgrey") 
-display(m_final_no_landscape)
-
-
-# visualize aspects of final model, no landscape ------------------------
-visreg(m_final_no_landscape,"Depth","Ecological_zone", xlab="Depth",ylab="Reef State")
-visreg(m_final_no_landscape,"Population_risk","Ecological_zone", xlab="Population_risk",ylab="Reef State")
-visreg(m_final_no_landscape,"Fishing_legacy_1980_2000","Ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
-visreg(m_final_no_landscape,"Blast_fishing_2010_2000","Ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
-
+m3_avg <- model.avg(top_m3,cumsum(weight) <= .95, fit = TRUE, subset = delta < 2) # fit = TRUE makes model.avg() keep fitted models
+m3_avg
 
 # ---------------------------------
 # SAVE 
 # ----------------------------------
 
 # models --------------
-save(m_all2,file="./results_train/mixedEf_final_all1.R") #same but uncleaned variable names 
-save(m_final,file="./results_train/mixedEf_final_all.R") 
-save(m_final_no_landscape,file="./results_train/mixedEf_final_no_landscape.R") 
+# save full model to file -----------
+save(m_all3,file="./results_train/model_no_landscape.R")
+
+# Save averaged no landccape model to file
+saveRDS(m3_avg, file = "./results_train/model_no_landscape_avg.rds")
+
+#save updated image to set options for probabilities in GT
+save.image("./results_train/mixedEf_final_all1_no_landscape.RData")
+
+
+
+
+# outputs ---------------
+cof3<-data.frame(m3_avg$coefficients[1,]) # full
+cof3
+summary(m3_avg)            # shows (full average) & (conditional average)
+sw(m3_avg)                # relative importance of predictors
+
+coef_full3 <- coef(m3_avg, full = TRUE)      # Extract full-model average coefficients - MPA and blast fishing less important
+
+summary(m3_avg, full = TRUE)$coefmat.full   # full model average with SE, z, p
+confint(m3_avg, full = TRUE)                # 95% CI for full model average
+
+
+
+# Coefficients, SEs, z, p
+coef_table3 <- summary(m3_avg, full = TRUE)$coefmat.full
+coef_table3
+
+# Confidence intervals
+ci3 <- confint(m3_avg, full = TRUE)
+
+
+
+# ---------------------------------
+# SAVE (same as above, here in one place)
+# ----------------------------------
+
+# models --------------
+# Save averaged object to file
+saveRDS(m1_avg, file = "./results_train/model_full_avg.rds")
+saveRDS(m3_avg, file = "./results_train/model_no_landscape_avg.rds")
+
+# main model with all variables
+save(m_all2,file="./results_train/model_full.R")
+save(m_all3,file="./results_train/model_no_landscape.R")
 
 
 #save image to set options for probabilities in GT
 save.image("./results_train/mixedEf_final_all1.RData")
+load("./results_train/mixedEf_final_all1.RData")
 
-# save modified datasets -------------
-# THESE ARE SIMILAR. d4 has all variables, d5 has updated names for clean final model - in d5 seagrass is exponated
-d4a<-d4%>%select(-depth_m_cs)
-write_csv(d4a,"./results_train/17_IndpVar_Pts_train_for_models_all.csv")
-write_csv(d5,"./results_train/17_IndpVar_Pts_train_for_models_subset.csv")
+
+
 
 
 

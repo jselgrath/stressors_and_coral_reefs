@@ -20,16 +20,17 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 # -------------------------------------------
 #read in shapefile of habitat/resilience data
 habitat<-st_read("./results/habitat.gpkg",layer="habitat_all_fa_reclass2")%>%
+  mutate(resilience_id=if_else(hab_reclass=="Coral",1,0))%>%
   glimpse() 
 
 #read in gpkg layer of random points - set with R code 
-# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_train")%>% # update this name if change sampling number and distance
-#   glimpse()
-# pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_900pts_250m_test")%>% # update this name if change sampling number and distance
-#   glimpse()
 
-pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # update this name if change sampling number and distance
+# we haphazardly added points in undersampled habitats in ArcPro to follow the rule from Plant (2020) that random effects needs >=10 samples.
+# pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train_extra_pts100")%>% # update this name if change sampling number and distance
+#   glimpse()
+pts<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_train")%>% # 
   glimpse()
+
 pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_1500pts_100m_test")%>% # update this name if change sampling number and distance
   glimpse()
 
@@ -38,12 +39,10 @@ pts_te<-st_read("./results/basic_files.gpkg", layer="stratified_random_points_15
 # extract hab polygon data to points
 pts2 <- pts%>%
   st_join(habitat)%>% 
-  mutate(resilience_id=if_else(hab_reclass=="Coral",1,0))%>%
   glimpse()
 
 pts2_te <- pts_te%>%
   st_join(habitat)%>% 
-  mutate(resilience_id=if_else(hab_reclass=="Coral",1,0))%>%
   glimpse()
 
 # save 
