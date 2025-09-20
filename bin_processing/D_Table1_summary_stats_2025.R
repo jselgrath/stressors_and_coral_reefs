@@ -39,9 +39,12 @@ d1<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>% # all
 d1$Depth_m
 
 # table to add values to
-d0<-read_csv("./doc/model_avg_odds_ratios_full.csv")%>%
+d0<-read_csv("./doc/Table1_model_avg_odds_full.csv")%>%
   glimpse()
 d0
+
+d0l<-read_csv("./doc/Table1_model_avg_odds_no_landscape.csv")%>%
+  glimpse()
 
 
 # -----------------------------
@@ -138,7 +141,7 @@ d3
 write_csv(d3,"./doc/D_IndpVar_Pts_MeanSD_train_normalized_fishing.csv")
 
 
-#update table with averaged sd of years fishing
+#update table with averaged sd of years fishing - full model
 t1<-d3%>%
   dplyr::select(Term,sd_var)%>%
   glimpse()
@@ -152,5 +155,20 @@ t2<-t1%>%
 t2
 
 
+#update table with averaged sd of years fishing - no landscape model
+t1l<-d3%>%
+  dplyr::select(Term,sd_var)%>%
+  filter(Term!="I(sg100^2)"&Term!="sg100"&Term!="river100"&Term!="psi2")%>%
+  glimpse()
+t1l$sd_var[t1l$Term=="fishing_30lag"]<-mean_sd_years
+t1l$sd_var[t1l$Term=="blast10"]<-mean_sd_years_b
+
+t1l
+t2l<-t1l%>%
+  full_join(d0l)%>%  
+  glimpse()
+t2l
+
 # --save to .csv so can import for probability info
-write_csv(t2,"./doc/model_avg_odds_ratios_full2.csv")
+write_csv(t2,"./doc/model_avg_odds_full2.csv")
+write_csv(t2l,"./doc/model_avg_odds_no_landscape2.csv")

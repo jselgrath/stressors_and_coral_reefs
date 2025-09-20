@@ -5,22 +5,23 @@
 
 # goal:  exporting residuals from final model
 
+# for averaged models, averaging only combines coefficients, not the actual fitted likelihoods and random effects structures across models
+
+# >>>using residuals from the global model
+
 ##########################
 library (arm)
 library(ggplot2)
 library(tidyverse)
 library(sf)
 
-# ------------------------------------------------------
+# -------------------------------------------
 remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-
-# setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs")
+setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
 # ------------------------------------------------------
-
 
 # load final models
 load("./results_train/model_full.R") #full model
@@ -29,7 +30,8 @@ load("./results_train/model_no_landscape.R") #full model, no landscape variables
 
 # # load data 
 d2<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>%
-  mutate(MPA=as.factor(MPA),Ecological_zone=as.factor(ecological_zone))%>%
+  mutate(MPA=as.factor(MPA),
+         Ecological_zone=as.factor(ecological_zone))%>%
   glimpse()
 
 
@@ -97,6 +99,7 @@ st_write(d_spatial,"./results_train/full_model_residuals.gpkg", layer="model",de
 
 
 # repeat and export a version with all data ----------------------
+# this is less relevant since I excluded large residuals
 # Identify outliers (bright spots and dark spots)
 d7<-d3
 d7$BrightSpots<-0

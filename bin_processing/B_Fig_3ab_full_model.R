@@ -31,6 +31,7 @@ color_map <- c(
   "Not significant" = "grey70"   # neutral grey
 )
 
+source("./bin_processing/deets_2025.R")
 
 # ----------------------------------
 # -- FULL MODEL
@@ -82,22 +83,22 @@ tab_ranked <- data.frame(
   check.names = FALSE
 ) %>%
   filter(Term != "(Intercept)")%>% # not relevant for this graph
-  # Significance stars
+  # # Significance stars
   mutate(
-    Stars   = case_when(
-      p_value < 0.001 ~ "***",
-      p_value < 0.01  ~ "**",
-      p_value < 0.05  ~ "*",
-      p_value < 0.1   ~ ".",
-      TRUE            ~ ""
-    ),
+  #   Stars   = case_when(
+  #     p_value < 0.001 ~ "***",
+  #     p_value < 0.01  ~ "**",
+  #     p_value < 0.05  ~ "*",
+  #     p_value < 0.1   ~ ".",
+  #     TRUE            ~ ""
+  #   ),
     SigFlag = ifelse(p_value < 0.05, 1, 0)
   ) %>%
   # Add pretty labels and types
   mutate(
     VarType      = dplyr::recode(Term, !!!var_types, .default = "Other"),
     Term_pretty  = dplyr::recode(Term, !!!pretty_names, .default = Term),
-    Term_label   = paste0(Term_pretty, " ", Stars),
+    Term_label   = paste0(Term_pretty),#, " ", Stars),
     AbsStrength  = abs(Estimate),
     VarType_sig  = ifelse(SigFlag == 1, VarType, "Not significant")
   ) %>%
@@ -124,16 +125,12 @@ ggplot(tab_ranked,
   coord_flip() +
   scale_color_manual(values = color_map, name = "Data Type") +
   labs(
-    title = "Model Average Estimates \nper 1 SD change in predictor (logit scale)",
+    title = "",
     x = "",
     y = "Standardized Effect Size (95% CI)"
   ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.6)
-  )
+  theme_deets(base_size = 11, legend = "none")
+  
 
 ggsave("./doc/fig3a_model_full.png", width = 8, height = 4, dpi = 300)
 
@@ -185,20 +182,20 @@ tab_ranked3 <- data.frame(
   filter(Term != "(Intercept)")%>% # not relevant for this graph
   # Significance stars
   mutate(
-    Stars   = case_when(
-      p_value < 0.001 ~ "***",
-      p_value < 0.01  ~ "**",
-      p_value < 0.05  ~ "*",
-      p_value < 0.1   ~ ".",
-      TRUE            ~ ""
-    ),
+  #   Stars   = case_when(
+  #     p_value < 0.001 ~ "***",
+  #     p_value < 0.01  ~ "**",
+  #     p_value < 0.05  ~ "*",
+  #     p_value < 0.1   ~ ".",
+  #     TRUE            ~ ""
+  #   ),
     SigFlag = ifelse(p_value < 0.05, 1, 0)
   ) %>%
   # Add pretty labels and types
   mutate(
     VarType      = dplyr::recode(Term, !!!var_types3, .default = "Other"),
     Term_pretty  = dplyr::recode(Term, !!!pretty_names3, .default = Term),
-    Term_label   = paste0(Term_pretty, " ", Stars),
+    Term_label   = paste0(Term_pretty),#, " ", Stars),
     AbsStrength  = abs(Estimate),
     VarType_sig  = ifelse(SigFlag == 1, VarType, "Not significant")
   ) %>%
@@ -225,16 +222,11 @@ ggplot(tab_ranked3,
   coord_flip() +
   scale_color_manual(values = color_map, name = "Data Type") +
   labs(
-    title = "Model Average Estimates (No Landscape) \nper 1 SD change in predictor (logit scale)",
+    # title = "Model Average Estimates (No Landscape) \nper 1 SD change in predictor (logit scale)",
     x = "",
     y = "Standardized Effect Size (95% CI)"
   ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.6)
-  )
+  theme_deets(base_size = 11, legend = "none")
 
 ggsave("./doc/fig3a_model_no_landscape.png", width = 8, height = 4, dpi = 300)
 

@@ -3,7 +3,7 @@
 # Multiple Stressors and Coral Reefs 
 # --------------------------------------------
 
-# GOAL: clip files for figures
+# GOAL: clip files for figures - clip here and mapped in ArcPro
 # -------------------------------------------
 # Load packages
 

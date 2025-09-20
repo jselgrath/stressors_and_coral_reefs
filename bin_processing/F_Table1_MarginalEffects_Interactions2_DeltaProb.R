@@ -21,12 +21,12 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 
 # load averaged model  ---------------
 m1_avg <- readRDS("./results_train/model_full_avg.rds")
-# m3_avg <- readRDS("./results_train/model_no_landscape_avg.rds")
+m3_avg <- readRDS("./results_train/model_no_landscape_avg.rds")
 
 
 # load final model (m_all2) for R2 values from full models ---------------
 load("./results_train/model_full.R")
-# load("./results_train/model_model_no_landscape.R")
+load("./results_train/model_no_landscape.R")
 
 
 # load data - fit to model (centered & scaled) ---------------------
@@ -37,8 +37,8 @@ d2<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>% # all
   glimpse()
 
 # table to add to --
-tab_export<-read_csv("./doc/model_avg_odds_ratios_full2.csv")%>%glimpse()
-
+tab_export<-read_csv("./doc/model_avg_odds_full2.csv")%>%glimpse()
+tab_export3<-read_csv("./doc/model_avg_odds_no_landscape2.csv")%>%glimpse()
 # -----------------------------------------------------------------
 
 # -------------------------------------------
@@ -116,63 +116,106 @@ marginal_effect <- function(var, model, data, per_sd = TRUE) {
 
 
 # apply fxn - skip interaction and polynomial terms that aren’t raw columns in your dataset.
+
+# full--
 delta_prob <- sapply(vars, marginal_effect,
                      model = m1_avg, data = model_data, per_sd = TRUE)
-
 delta_df <- data.frame(
   Term = vars,
   DeltaProb = round(delta_prob * 100, 1)
 )
 
+# no landscape --
+delta_prob3 <- sapply(vars, marginal_effect,
+                     model = m3_avg, data = model_data, per_sd = TRUE)
+
+delta_df3 <- data.frame(
+  Term = vars,
+  DeltaProb = round(delta_prob3 * 100, 1)
+)
+
+
 # --------------------------------------------------------
 # apply function to predictions
+
+# - full --
 model_data <- getData(m_all2) # data from main model
 coef_terms <- setdiff(names(fixef(m_all2)), "(Intercept)")
-
 delta_prob <- sapply(coef_terms, marginal_effect,
                      model = m1_avg, data = model_data, per_sd = TRUE)
-
 delta_df <- data.frame(
   Term = coef_terms,
   DeltaProb = round(delta_prob * 100, 2)  # % change in probability
 )
 
+# - no landscape --
+model_data3 <- getData(m_all3) # data from main model
+coef_terms3 <- setdiff(names(fixef(m_all3)), "(Intercept)")
+delta_prob3 <- sapply(coef_terms3, marginal_effect,
+                     model = m3_avg, data = model_data, per_sd = TRUE)
+delta_df3 <- data.frame(
+  Term = coef_terms3,
+  DeltaProb = round(delta_prob3 * 100, 2)  # % change in probability
+)
 
+# ------------------------------------
 # merge with results table
 tab_with_marg <- tab_export %>%
   left_join(delta_df, by = "Term")%>%
-  dplyr::select(Variable=Variables, Type = VarType, OddsRatio, CI, p_value, DeltaProb, sd_var, WeightSum, Nmodels)%>%
+  dplyr::select(Variable, Type = VarType, OddsRatio, CI, p_value, DeltaProb, sd_var, WeightSum, Nmodels,Wald_z,Wald_p)%>%
+  arrange(desc(OddsRatio))%>%
   glimpse()
 
 tab_with_marg
 
+tab_with_marg3 <- tab_export3 %>%
+  left_join(delta_df3, by = "Term")%>%
+  dplyr::select(Variable, Type = VarType, OddsRatio, CI, p_value, DeltaProb, sd_var, WeightSum, Nmodels,Wald_z,Wald_p)%>%
+  arrange(desc(OddsRatio))%>%
+  glimpse()
+
+tab_with_marg3
+
+
 # and for MPAs ------------------------------
+# full --
 d0 <- model_data; d0$MPA <- factor(600)
 d1 <- model_data; d1$MPA <- factor(601)
 
 p0 <- predict(m_all2, newdata = d0, type = "response")
 p1 <- predict(m_all2, newdata = d1, type = "response") #, full = TRUE
 
+# no landscape --
+d0l <- model_data3; d0l$MPA <- factor(600)
+d1l <- model_data3; d1l$MPA <- factor(601)
+
+p0l <- predict(m_all3, newdata = d0l, type = "response")
+p1l <- predict(m_all3, newdata = d1l, type = "response") #, full = TRUE
+
 # interpret MPA as the contrast between categories (inside vs outside).
 
 mpa_dif<-mean(p1 - p0) * 100   # % point difference
+mpa_dif3<-mean(p1l - p0l) * 100   # % point difference
 
-# add this value to table
+
+
+# add this value to table --------------------------
+# full --
 tab_with_marg$DeltaProb[tab_with_marg$Variable=="MPA (protected)"]<-mpa_dif
 tab_with_marg
 
+# no landscape --
+tab_with_marg3$DeltaProb[tab_with_marg3$Variable=="MPA (protected)"]<-mpa_dif3
+tab_with_marg3
+
 
 # --save to .csv so can import for probability info
-write_csv(tab_with_marg,"./doc/model_avg_odds_ratios_full3.csv")
-
+write_csv(tab_with_marg,"./doc/table1_model_avg_odds_full3.csv")
+write_csv(tab_with_marg3,"./doc/table1_model_avg_odds_no_landscape3.csv")
 
 # --- Pretty Export with sjPlot ---
-tab_df(tab_with_marg,
-       title    = "Fixed Effects Odds Ratios (Averaged Model)",
-       # subtitle = "Fixed effects averaged across ΔAIC ≤ 2 models",
-       file     = "./doc/model_avg_odds_ratios_full3.doc")
-
-
+write_csv(tab_with_marg,"./doc/table1_model_avg_odds_full3.csv")
+write_csv(tab_with_marg3,"./doc/table1_model_avg_odd_no_landscape3.csv")
 # A +1 change in the scaled predictor corresponds to a +1 SD change in the raw data.
 
 # The DeltaProb values are in percentage points.

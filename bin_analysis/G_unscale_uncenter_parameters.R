@@ -16,27 +16,35 @@ library(car)
 library(MuMIn)
 library(DHARMa)# residual diagnostics for heirarchical regression models
 
-# ------------------------------------------------------------------
+# -------------------------------------------
 remove(list=ls())
 
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
+setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
-setwd("C:/Users/jselg/OneDrive/Documents/research/R_projects/phd/stressors_and_coral_reefs")
-# ---------------------------------------------
+# ------------------------------------------------------
+
+
+
 # load model- m_all2
-load("./results_train/mixedEf_final_all1.R") # unscaled data is scaled in model
+load("./results_train/model_full.R") # unscaled data is scaled in model
 summary(m_all2)
 display(m_all2)
 
 # load data - scaled & seagrass is exponated
 d0<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_subset.csv")%>% # all
-  mutate(MPA=as.factor(MPA),
-         Ecological_zone=as.factor(Ecological_zone),
-         Depth=Depth*-1)%>%
+  mutate(
+         Depth_m=Depth_m*-1)%>%   # made depth positive for easier interpretation
+  mutate(MPA=as.factor(mpa_id),     # make factors
+         ecological_zone=as.factor(ecological_zone),
+         Reef_state=resilience_id
+  )%>%
   glimpse()
 
+
+
 # load data - unscaled
-d1<-read_csv("./results_train/17_IndpVar_Pts_train_for_models_all.csv")%>% # all
+d1<-read_csv("./results_train/16_IndpVar_Pts_train_all.csv")%>% # all
   mutate(MPA=as.factor(MPA),
          ecological_zone=as.factor(ecological_zone),
          # Depth_m=Depth_m*-1,

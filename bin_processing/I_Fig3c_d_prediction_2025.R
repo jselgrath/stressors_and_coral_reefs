@@ -15,6 +15,8 @@ library(colorspace)
 
 
 # ------------------------------------------------------------------
+
+
 # -------------------------------------------
 remove(list=ls())
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
@@ -27,7 +29,7 @@ setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/"
 d2<-read_csv("./results_test/m_final_test_data.csv")%>%
   glimpse()
 
-unique(d2$ecological_zone )
+unique(d2$ecological_zone)
 
 P.u<-mean(d2$p_m_final)
 P.sd<-sd(d2$p_m_final)
@@ -39,10 +41,7 @@ P.stats
 # names(d2)
 
 
-#########################
-# loc2=("C:/Users/Jenny/Dropbox/1PhD/R.projects/Ch5/Resilience/doc/MixedEf1_Q51")
-# setwd(loc2)
-
+source("./bin_processing/deets_2025.R")
 
 ###########################################
 # Graph with estimates
@@ -50,12 +49,14 @@ P.stats
 # full model
 gg_full<-ggplot(data=d2, aes(x=p_m_final))+geom_histogram(binwidth = .02)+  ylab("Count")+
 	xlab("Predicted Probability of Coral")+
+  ylim(0,400)+
 	theme_classic() 
 gg_full
 
 
 gg_final_no_l<-ggplot(data=d2, aes(x=p_m_final_no_l ))+geom_histogram(binwidth = .02)+  ylab("Count")+
 	xlab("Predicted Probability of Coral")+
+  ylim(0,400)+
 	theme_classic() 
 gg_final_no_l
 
@@ -70,21 +71,20 @@ d3<-d2%>%
 
 d3$MPA<-as.factor(d3$MPA)
 d3$Reef_state<-as.factor(d3$Reef_state)
-d3$State<-d3$Reef_state
 d3$Ecological_zone<-as.factor(d3$ecological_zone)
 glimpse(d3)
 head(d3)
 
 # create missing level for coastal, rubble. Set y value above range of graph's y value
 
-temp1<-c("Coastal",0,0,"p_m_final",0)
-temp2<-c("Coastal",0,0,"p_m_final_no_l",0)
+# temp1<-c("Coastal",0,0,"p_m_final",0)
+# temp2<-c("Coastal",0,0,"p_m_final_no_l",0)
 
 
 d4<-d3%>%
-  dplyr::select(Ecological_zone,State,Reef_state,model,estimate)%>%
-  rbind(temp1,temp2)%>%
-  mutate(Ecological_zone=factor(Ecological_zone),State=as.numeric(State),model=factor(model),estimate=as.numeric(estimate))%>%
+  dplyr::select(ecological_zone,Reef_state,resilience_id,model,estimate)%>%
+  # rbind(temp1,temp2)%>%
+  mutate(Ecological_zone=factor(ecological_zone),model=factor(model),estimate=as.numeric(estimate))%>%
   glimpse()
 
 range(d4$estimate)
@@ -95,7 +95,7 @@ range(d4$estimate)
 
 # name for reef state
 d4$Reef_state<-"Rubble"
-d4$Reef_state[d4$State=="1"]<-"Coral"
+d4$Reef_state[d4$resilience_id==1]<-"Coral"
 d4$Reef_state<-as.factor(d4$Reef_state)
 
 glimpse(d4)
@@ -104,6 +104,7 @@ glimpse(d4)
 
 #######################
 # graphs
+source("./bin_processing/deets_2025.R")
 
 d4$fct<-""
 
@@ -115,14 +116,21 @@ d4$Ecological_zone <- factor(
              "Inner Reef", 
              "Inner Reef - Coastal", 
              "Terrestrial Island", 
+             "Coastal"),
+  labels = c("Outer Reef",
+             "Outer Reef (Channel)",
+             "Inner Reef",
+             "Inner Reef (Coastal)",
+             "Terrestrial Island",
              "Coastal")
 )
 
+
+
 # Now plot
 ggplot(data = d4, aes(x = Ecological_zone, y = estimate, fill = Reef_state)) +
-  geom_boxplot(colour = "black", size = 1, outlier.size = 2, na.rm = FALSE) +
+  geom_boxplot(colour = "black", size = .7, outlier.size = 1, na.rm = FALSE) +
   geom_text(data = d4, aes(x = 3.2, y = 1, label = fct), size = 2) +
-  deets5 +
   ylab("Predicted Probability of Habitats\n") +
   xlab("Ecological Zone") +
   coord_cartesian(ylim = c(-0.01, 1.01)) +
@@ -131,9 +139,9 @@ ggplot(data = d4, aes(x = Ecological_zone, y = estimate, fill = Reef_state)) +
     palette = "Berlin", nmax = 5, order = c(5, 4),
     name = "Mapped Habitat"
   ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme_deets(strip_blank = TRUE, rotate_x = 90) 
 
-ggsave("./doc/fig_3c_3d.tif", width = 6, height=8)
+ggsave("./doc/fig_3c_3d.png", width = 6, height=8)
 
 
 

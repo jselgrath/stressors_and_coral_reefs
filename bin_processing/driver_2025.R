@@ -344,7 +344,7 @@ source("./bin_processing/16_All_dataSetupB_train_test.R") # was 4
 # ANALYSES -------------------------
 
 # A. dredge full model ------------------------
-source("./bin_analysis/A_analysis_2025.R")
+source("./bin_processing/A_analysis_2025.R")
 # input:  ./results_train/16_IndpVar_Pts_train.csv
 # output: ./results_train/model_full.R                              # full model
 #         ./results_train/model_full_avg.rds                        # averaged full model
@@ -357,7 +357,7 @@ source("./bin_analysis/A_analysis_2025.R")
 
 
 # B. Figure 3a & b - full model and reduced ------------------------
-source("./bin_analysis/B_Fig3ab_full_model.R")
+source("./bin_processing/B_Fig_3ab_full_model.R")
 # input:  ./results_train/model_full_avg.rds
 #         ./results_train/model_no_landscape_avg.rds
 # output: ./doc/Fig3a_model_full.png
@@ -365,7 +365,7 @@ source("./bin_analysis/B_Fig3ab_full_model.R")
 
 
 # C. Table 1. Full Model ------------------------
-source("./bin_analysis/C_Table1_2025.R")
+source("./bin_processing/C_Table1_2025.R")
 # input:  ./results_train/mixedEf_final_no_landscape.R
 # output: ./doc/fig_3b_reduced_model.tif
 #         ./doc/model_avg_details_no_landscape.csv
@@ -375,7 +375,7 @@ source("./bin_analysis/C_Table1_2025.R")
 
 
 # D. calculate summary statistics, includin sd - update value for un-normalized fishing sd for table 1
-source("./bin_analysis/D_Table1_summary_stats_2025.R")
+source("./bin_processing/D_Table1_summary_stats_2025.R")
 # input:  ./results_train/16_IndpVar_Pts_train_all.csv
 #         ./doc/model_avg_odds_ratios_full.csv
 # output: ./doc/D_IndpVar_Pts_MeanSD_train.csv
@@ -383,7 +383,7 @@ source("./bin_analysis/D_Table1_summary_stats_2025.R")
 
 
 # E. create table for marginal effects of interactions --------------------------
-source("./bin_analysis/E_Table1_MarginalEffects_Interactions.R")
+source("./bin_processing/E_Table1_MarginalEffects_Interactions.R")
 # input:  ./results_train/model_full_avg.rds
 #         ./results_train/model_full.R
 #         ./results_train/17_IndpVar_Pts_train_for_models_all.csv
@@ -392,8 +392,8 @@ source("./bin_analysis/E_Table1_MarginalEffects_Interactions.R")
 #         ./doc/model_avg_odds_ratios_full3.csv
 
 
-# update previous table to include delta probability
-source("./bin_analysis/F_Table1_MarginalEffects_Interactions2_DeltaProb.R")
+# F. update previous table to include delta probability
+source("./bin_processing/F_Table1_MarginalEffects_Interactions2_DeltaProb.R")
 # input:  ./doc/model_avg_odds_ratios_full2.csv
 #         ./results_train/model_full_avg.rds
 #         ./results_train/model_full.R
@@ -402,8 +402,8 @@ source("./bin_analysis/F_Table1_MarginalEffects_Interactions2_DeltaProb.R")
 
 
 
-# C. export residuals
-source("./bin_analysis/G_residuals_2025.R")
+# G. export residuals from final global model
+source("./bin_processing/G_residuals_2025.R")
 # input:  ./results_train/model_full.R #full model
 #         ./results_train/model_no_landscape.R
 #         ../results_train/17_IndpVar_Pts_train_for_models_all.csv"
@@ -415,29 +415,24 @@ source("./bin_analysis/G_residuals_2025.R")
 #         ./results_train/full_model_residuals2.gpkg", layer="all"
 
 # # D. calculate wald scores
-# source("./bin_analysis/D_TableS3_WaldScores_final_model.R")
+# source("./bin_processing/D_TableS3_WaldScores_final_model.R")
 # # input:  ./results_train/mixedEf_final_all.R
 # # output: ./doc/TableS3_final_model_wald.csv
 
 
 # E. replace testing data in model
-source("./bin_analysis/H_analysis_testing_data.R")
+source("./bin_processing/H_analysis_testing_data.R")
 # input:  ./results_train/model_full.R #full model
 #         ./results_train/model_no_landscape.R
 #         ./results_test/16_IndpVar_Pts_test_all.csv
 # output: ./results_test/m_final_test_data.csv
+#         ./doc/prediction_metrics.csv
+#         ./doc/roc_comparison.png
 
 # graphs of predictive power
-source("./bin_analysis/I_Fig3c_d_prediction.R")
+source("./bin_processing/I_Fig3c_d_prediction_2025.R")
 # input:    ./results_test/m_final_test_data.csv
 # output:   ./results_test/Fig3c3d_.tiff
-
-# uncenter and undstandardize coefficents ------------------------
-# source("./bin_analysis/G_unscale_uncenter_parameters.R")  - now done in other places
-# input:  ./results_train/15_IndpVar_Pts_train_for_models_all.csv
-#         ./results_train/mixedEf_final_all1.R
-# output: 
-
 
 
 

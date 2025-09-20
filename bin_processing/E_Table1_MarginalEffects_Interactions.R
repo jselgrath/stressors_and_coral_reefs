@@ -94,7 +94,7 @@ mi_fi_pr<-marginal_interaction("fishing_30lag:pr_inhab", m1_avg, model_data)
 # save table of marginal effects for interactions ---------------
 interactions<-tibble(rbind(mi_bl_pr,mi_fi_pr))%>%
   glimpse()
-write_csv(interactions,"./doc/table_marginal_effects_interactions.csv")
+write_csv(interactions,"./doc/Table2_marginal_effects_interactions.csv")
 
 
 
