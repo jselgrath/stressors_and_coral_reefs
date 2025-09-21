@@ -19,6 +19,7 @@ remove(list=ls())
 setwd("C:/Users/jselg/Dropbox/research_x1/R_projects/stressors_and_coral_reefs/")
 
 # ------------------------------------------------------
+source("./bin_processing/deets_2025.R")
 
 # ----------------------------------------------
 # load final models
@@ -164,6 +165,11 @@ roc1 <- roc(d2$Reef_state, d2$p_m_final)
 auc1 <- auc(roc1)
 plot(roc1)
 
+
+
+# thresholding at 0.5 
+d2$pred_class <- ifelse(d2$p_m_final > 0.5, 1, 0)
+
 cm1 <- table(Predicted = d2$pred_class, Observed = d2$Reef_state)
 
 TP1 <- cm1["1","1"]; TN1 <- cm1["0","0"]
@@ -193,7 +199,7 @@ roc2 <- roc(d2$Reef_state, d2$p_m_final_no_l)
 auc2 <- auc(roc2)
 plot(roc2)
 
-# thresholding at 0.5 unless you want optimal threshold
+# thresholding at 0.5 
 d2$pred_class_no_l <- ifelse(d2$p_m_final_no_l > 0.5, 1, 0)
 
 cm2 <- table(Predicted = d2$pred_class_no_l, Observed = d2$Reef_state)
@@ -226,7 +232,7 @@ metrics_tbl <- rbind(metrics1, metrics2)
 metrics_tbl
 
 # save table -------------
-write_csv(metrics_tbl, "./doc/prediction_metrics.csv")
+write_csv(metrics_tbl, "./doc/table_prediction_metrics.csv")
 
 
 # ----------------------------------------
@@ -283,3 +289,42 @@ ggsave("./doc/roc_comparison.png", roc_plot,
        width = 6, height = 4, dpi = 300)
 
 
+# colors from viridis palette
+cols2 <- sequential_hcl(1, palette = "Emrld")
+
+# main model only ---
+
+roc_plot_m1<-
+ggplot( roc_df1,aes(x = FPR, y = TPR, color = Model)) +
+  geom_line(size = 1.2) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = cols) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "ROC Curve Comparison",
+    x = "False Positive Rate",
+    y = "True Positive Rate",
+    color = "Model"
+  ) +
+  theme_deets(strip_blank = TRUE) 
+
+ggsave("./doc/fig3c_roc_comparison.png", roc_plot_m1,
+       width = 6, height = 4, dpi = 300)
+
+
+roc_plot_m2<-
+  ggplot( roc_df2,aes(x = FPR, y = TPR, color = Model)) +
+  geom_line(size = 1.2) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = cols) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "ROC Curve Comparison",
+    x = "False Positive Rate",
+    y = "True Positive Rate",
+    color = "Model"
+  ) +
+  theme_deets(strip_blank = TRUE) 
+
+ggsave("./doc/fig_s2_roc_comparison_no_land.png", roc_plot_m1,
+       width = 6, height = 4, dpi = 300)

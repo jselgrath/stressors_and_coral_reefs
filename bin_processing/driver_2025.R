@@ -377,9 +377,12 @@ source("./bin_processing/C_Table1_2025.R")
 # D. calculate summary statistics, includin sd - update value for un-normalized fishing sd for table 1
 source("./bin_processing/D_Table1_summary_stats_2025.R")
 # input:  ./results_train/16_IndpVar_Pts_train_all.csv
-#         ./doc/model_avg_odds_ratios_full.csv
+#         ./doc/Table1_model_avg_odds_ratios_full.csv
+#         ./doc/Table1_model_avg_odds_no_landscape.csv
 # output: ./doc/D_IndpVar_Pts_MeanSD_train.csv
-#         ./doc/model_avg_odds_ratios_full2.csv
+#         ./doc/Table1_model_avg_odds_ratios_full2.csv
+
+Table1_model_avg_odds_ratios_full
 
 
 # E. create table for marginal effects of interactions --------------------------

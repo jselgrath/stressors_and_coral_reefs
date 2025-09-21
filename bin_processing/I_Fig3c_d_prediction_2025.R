@@ -48,16 +48,16 @@ source("./bin_processing/deets_2025.R")
 
 # full model
 gg_full<-ggplot(data=d2, aes(x=p_m_final))+geom_histogram(binwidth = .02)+  ylab("Count")+
-	xlab("Predicted Probability of Coral")+
+	xlab("Predicted Probability of Habitats")+
   ylim(0,400)+
-	theme_classic() 
+  theme_deets(strip_blank = TRUE)  
 gg_full
 
 
 gg_final_no_l<-ggplot(data=d2, aes(x=p_m_final_no_l ))+geom_histogram(binwidth = .02)+  ylab("Count")+
-	xlab("Predicted Probability of Coral")+
+	xlab("Predicted Probability of Habitats")+
   ylim(0,400)+
-	theme_classic() 
+  theme_deets(strip_blank = TRUE) 
 gg_final_no_l
 
 
@@ -75,30 +75,26 @@ d3$Ecological_zone<-as.factor(d3$ecological_zone)
 glimpse(d3)
 head(d3)
 
-# create missing level for coastal, rubble. Set y value above range of graph's y value
-
-# temp1<-c("Coastal",0,0,"p_m_final",0)
-# temp2<-c("Coastal",0,0,"p_m_final_no_l",0)
 
 
 d4<-d3%>%
   dplyr::select(ecological_zone,Reef_state,resilience_id,model,estimate)%>%
-  # rbind(temp1,temp2)%>%
   mutate(Ecological_zone=factor(ecological_zone),model=factor(model),estimate=as.numeric(estimate))%>%
+  mutate(reef_state2=if_else(Reef_state==0,"Rubble", "Coral"))%>% # name for reef state
   glimpse()
 
 range(d4$estimate)
 
-
-# if no coastal
-# d4<-d3
-
-# name for reef state
-d4$Reef_state<-"Rubble"
-d4$Reef_state[d4$resilience_id==1]<-"Coral"
-d4$Reef_state<-as.factor(d4$Reef_state)
-
-glimpse(d4)
+# 
+# 
+# 
+# 
+# 
+# d4$Reef_state<-"Rubble"
+# d4$Reef_state[d4$resilience_id==1]<-"Coral"
+# d4$Reef_state<-as.factor(d4$Reef_state)
+# 
+# glimpse(d4)
 
 
 
@@ -128,7 +124,7 @@ d4$Ecological_zone <- factor(
 
 
 # Now plot
-ggplot(data = d4, aes(x = Ecological_zone, y = estimate, fill = Reef_state)) +
+ggplot(data = d4, aes(x = Ecological_zone, y = estimate, fill = reef_state2)) +
   geom_boxplot(colour = "black", size = .7, outlier.size = 1, na.rm = FALSE) +
   geom_text(data = d4, aes(x = 3.2, y = 1, label = fct), size = 2) +
   ylab("Predicted Probability of Habitats\n") +
