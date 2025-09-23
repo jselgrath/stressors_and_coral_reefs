@@ -48,90 +48,35 @@ focal_area<-st_read("./gis2/focal_area/focal_area_sm_land2.shp")%>%
                       vect() # Convert to SpatVector
 plot(focal_area)                      
 
-
-village1<-st_read("./gis2/population/BarangayPopulation2010_pt.shp")%>% # villages up to 10 km from focal area
-  dplyr::filter(BgyName!="Fatima", BgyName!="Campao Oriental")%>% glimpse()  # not coastal, few fishers
-
-village2<-st_read("./gis2/population/BarangayPopulation2010p.shp") # village area and more attributes
-
-v3<-st_join(village1,village2)%>%
-  dplyr::select(country=NAME_0,ID_1:ID_3,ENGTYPE_3,province=PROVINCE,lgu=LGU,barangay=Barangay,BgyName,pop_2010,AREA_GEO,fishers_n:interviews,interviews_n=intervie_1)%>%
-  unique()%>%
-  glimpse()
-v3
-
-
-# check -
-v3
-v3%>%
-  filter(is.na(lgu))%>%
-  arrange(ID_3)
-# view(v3)
-
-# st_write(v3,"./gis2/population/_pop.shp") # to check visually in ArcPro
-
-# full spatial area
-villages0<-village2%>% # polygons, has "pop_2010" - base file 
-  dplyr::select(ID_3,pop_2010)%>%
-  mutate(
-    area_m2_orig  = st_area(geometry),                                    # area in m²
-    area_km2_orig = round(as.numeric(area_m2_orig) / 1e6,2),              # area in km²
-    pop_dens_km2_orig = round(pop_2010 / area_km2_orig,2)                 # population density (people/km²)
-  )%>%
-  arrange(pop_dens_km2_orig)%>%
-  glimpse()
-  # plot(villages0[13])
-
-villages_orig<-as.data.frame(villages0)%>%
-  dplyr::select(-geometry)%>%
+# villages -----
+# area orig calc from 
+villages<-st_read("./gis2/population/population.gpkg", layer = "barangay_pop2010_area")%>%
+  dplyr::select(barangay, pop_2010:geom)%>%
   glimpse()
 
-# updated spatial area removing non-inhabited islands
-villages00<-st_read("./gis2/population/BarangayPopulation2010p_1.shp")%>% # removes mangrove only islands from area calculations
-  dplyr::select(ID_3,pop_2010)%>%
-  mutate(
-    area_m2_inhab  = st_area(geometry),                      # area in m²
-    area_km2_inhab = as.numeric(area_m2_inhab) / 1e6,              # area in km²
-    pop_dens_km2_inhab = pop_2010 / area_km2_inhab           # population density (people/km²)
-  )%>%
-  arrange(pop_dens_km2_inhab)%>%
-  as.data.frame()%>%
-  glimpse()
-# plot(villages00[13])
+# as an fyi - these were files used for calculating area ----------------'
 
-villages_inhab<-as.data.frame(villages00)%>%
-  dplyr::select(-geometry)%>%
-  glimpse()
+# ORIGINAL: barangay shapefile original population area is from ---------
+# villages_orig<-st_read("./gis2/population/BarangayPopulation2010p.shp")%>% # village area and more attributes
+#   tibble()%>%
+#   dplyr::select(barangay=Barangay)%>%
+#   glimpse()
+
+# INHABITED: barangay shapefile with updated area for cays.  # removes uninhabited mangrove only islands from area calculations
+# villages_inhab<-st_read("./gis2/population/BarangayPopulation2010p_inhabited_2025.shp")%>% 
+#   tibble()%>%
+#   dplyr::select(barangay=Barangay)%>%
+#   glimpse
+#  - values from shapefiles - 
+#   area_m2_orig/inhab  = st_area(geometry),                                    # area in m²
+# area_km2_orig/inhab = round(as.numeric(area_m2_orig) / 1e6,2),              # area in km²
+# pop_dens_km2_orig/inhab = round(pop_2010 / area_km2_orig,2)                 # population density (people/km²)
 
 
-# combine
-villages<-v3%>%
-  full_join(villages_orig)%>%
-  full_join(villages_inhab)%>%
-  arrange(ID_3)%>%
-  glimpse()
 
-villages%>%
-  filter(is.na(lgu))%>%
-  arrange(ID_3)
-# view(v3)
+# save  - this is the combined file
+# write_csv(villages,"./doc/population_stats_2025.csv")
 
-# view(villages)
-
-# check -
-villages
-tail(villages)
-range(villages$pop_dens)
-
-plot(villages)
-
-villages2<-villages%>%
-  tibble()
-
-# save 
-write_csv(villages2,"./doc/population_stats_2025.csv")
-range(villages2$pop_dens_km2_orig)
-range(villages2$pop_dens_km2_inhab)
 
 
 
