@@ -12,6 +12,7 @@ library(ggplot2)
 library(sjPlot)
 library(ggtext)
 
+
 # -------------------------------------------
 remove(list=ls())
 # setwd("C:/Users/jennifer.selgrath/Documents/research/R_projects/phd/stressors_and_coral_reefs")
@@ -53,8 +54,10 @@ tab_export3<-read_csv("./doc/model_avg_odds_no_landscape2.csv")%>%glimpse()
 # logit -> probability
 logit2prob <- function(x) exp(x) / (1 + exp(x))
 
-# Extract the original dataset used to fit the global model
-model_data <- getData(m_all2)   # works for lme4/glmer fits
+# Extract the original dataset (predictors) used to fit the global model
+# response <- model.response(model.frame(m_all2))
+model_data <- model.frame(m_all2)[ , -1]   # everything except response
+
 
 
 # get coefficient names, drop intercept
@@ -139,7 +142,7 @@ delta_df3 <- data.frame(
 # apply function to predictions
 
 # - full --
-model_data <- getData(m_all2) # data from main model
+model_data <- model.frame(m_all2)[ , -1]   # everything except response # data from main model
 coef_terms <- setdiff(names(fixef(m_all2)), "(Intercept)")
 delta_prob <- sapply(coef_terms, marginal_effect,
                      model = m1_avg, data = model_data, per_sd = TRUE)
@@ -149,7 +152,7 @@ delta_df <- data.frame(
 )
 
 # - no landscape --
-model_data3 <- getData(m_all3) # data from main model
+model_data3 <- model.frame(m_all3)[ , -1]   # everything except response # data from main model
 coef_terms3 <- setdiff(names(fixef(m_all3)), "(Intercept)")
 delta_prob3 <- sapply(coef_terms3, marginal_effect,
                      model = m3_avg, data = model_data, per_sd = TRUE)

@@ -326,5 +326,5 @@ roc_plot_m2<-
   ) +
   theme_deets(strip_blank = TRUE) 
 
-ggsave("./doc/fig_s2_roc_comparison_no_land.png", roc_plot_m1,
+ggsave("./doc/fig_s2_roc_comparison_no_land.png", roc_plot_m2,
        width = 6, height = 4, dpi = 300)

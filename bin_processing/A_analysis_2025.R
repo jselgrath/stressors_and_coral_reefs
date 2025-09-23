@@ -173,24 +173,21 @@ d1$river100<-as.numeric(cs. (d1$point_dist_river100))
 d1$psi<-as.numeric(cs. (d1$patch_shape_index))
 d1$pr_orig<-as.numeric(cs. (d1$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d1$pr_inhab<-as.numeric(cs. (d1$pop_risk_dens_inhab))
+d1$pr_2025<-as.numeric(cs. (d1$pop_risk_2025area))
 d1$fishing_30lag<-as.numeric(cs. (d1$lag_all_30))
 d1$fishing_20lag<-as.numeric(cs. (d1$lag_all_20))
 d1$fishing_10lag<-as.numeric(cs. (d1$lag_all_10))
-d1$fishing10<-as.numeric(cs. (d1$cumulative_all_00))
-d1$fishing20<-as.numeric(cs. (d1$cumulative_all_10))
 d1$blast10<-as.numeric(cs. (d1$cumulative_blast_10))
-d1$poison10<-as.numeric(cs. (d1$cumulative_poison_10))
 d1$pr<-as.numeric(cs. (d1$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
-
-
 d1$psi2<- -1*d1$psi
+
 # ---------------------------------------------
 # precompute interactions
 # ---------------------------------------------
 # precompute
-d1$sg2<-d1$sg^2
-d1$pri_f30<-d1$pr_inhab*d1$fishing_30lag
-d1$pri_b10<-d1$pr_inhab*d1$blast10
+# d1$sg2<-d1$sg^2
+# d1$pri_f30<-d1$pr_inhab*d1$fishing_30lag
+# d1$pri_b10<-d1$pr_inhab*d1$blast10
 
 glimpse(d1)
 
@@ -249,14 +246,14 @@ var1<-Reef_state ~
   sg100+
   I(sg100^2)+
   psi2+
-  pr_inhab+
+  pr_2025+
   # pr+ # OR point_dist_Mangrove or river_distance
   # mg+
   river100+
   fishing_30lag+
   blast10+
-  pr_inhab:fishing_30lag+
-  pr_inhab:blast10+
+  pr_2025:fishing_30lag+
+  pr_2025:blast10+
   MPA+
   ecological_zone2
 
@@ -298,14 +295,15 @@ var2<-Reef_state ~
   sg100+
   I(sg100^2)+
   psi2+
-  pr_inhab+ 
+  pr_orig+ 
+  # pr_2025+ 
   # pr+ # OR point_dist_Mangrove or river_distance
   # mg+
   river100+
   fishing_30lag+
   blast10+
-  pr_inhab:fishing_30lag+
-  pr_inhab:blast10+
+  pr_orig:fishing_30lag+
+  pr_orig:blast10+
   MPA+
   (1|ecological_zone) 
 fxn2<-as.formula(var2)
@@ -320,12 +318,6 @@ Anova(m_all)
 tab_model(m_all, show.df = TRUE)
 plot_model(m_all, vline.color = "lightgrey")
 
-r_all<-residuals(m_all, type="pearson")
-r_all
-
-d1_m_all_r<-cbind(d1,r_all)
-
-
 # ---------------------------------------------
 # OUTLIERS - all
 # ---------------------------------------------
@@ -336,7 +328,7 @@ d1_m_all_r<-cbind(d1,r_all)
 
 # plot residuals for m_all ------------------------
 r_all<-residuals(m_all, type="pearson")
-r_all
+# r_all
 
 d1_m_all_r<-cbind(d1,r_all)
 
@@ -356,40 +348,37 @@ d1_m_all_r%>%
   ggplot(aes(x,y,color=r_all))+geom_point()
 
 
-# remove  large residuals
+
+# lsit of residuals >2.5
 d1_m_all_r%>%
-  filter(abs(r_all)>2.5)%>%dplyr::select(point_id)
-  
+  filter(abs(r_all)>2.5)%>%dplyr::select(point_id)#%>%glimpse()
+
 d2<-d1%>%
-  filter(point_id!=17&point_id!=63&point_id!=83&point_id!=132&point_id!=145&point_id!=154)%>%
-  filter(point_id!=173&point_id!=180&point_id!=269&point_id!=323&point_id!=370&point_id!=381&point_id!=388)%>%
-  filter(point_id!=476&point_id!=483&point_id!=578)%>%
-  filter(point_id!=606&point_id!=611)%>%
-  filter(point_id!=658&point_id!=717&point_id!=788&point_id!=795)%>%
-  filter(point_id!=817&point_id!=898&point_id!=900&point_id!=1077&point_id!=1096&point_id!=1203&point_id!=1228)%>%
-  filter(point_id!=1246&point_id!=1284&point_id!=1307&point_id!=1371&point_id!=1383&point_id!=1389)%>%
-  filter(point_id!=1408&point_id!=1412&point_id!=1433&point_id!=1443&point_id!=1445&point_id!=1464)%>%
-  filter(point_id!=1488)%>%
+filter(!point_id %in% c(
+  17, 63, 83, 132, 145, 154, 173, 180, 269, 323, 370, 388, 476, 483, 578, 606, 658, 717, 788, 795, 817, 898, 900, 1077, 1096, 1203, 1228, 1246, 1284, 1307, 1371, 1408, 1412, 1445, 1464,1488
+)) %>%
+  filter(!point_id %in% c(
+    178, 361, 381, 611, 1306, 1383, 1384, 1389, 1419, 1433
+  )) %>%
   glimpse()
+  
 
 
 # re-run cs fxn on variables
 d2$depth<-as.numeric(cs. (d2$Depth_m))
 d2$sg<-as.numeric(cs. (d2$point_dist_Seagrass))
-d1$sg100<-as.numeric(cs. (d1$point_dist_Seagrass100))
+d2$sg100<-as.numeric(cs. (d2$point_dist_Seagrass100))
 d2$mg<-as.numeric(cs. (d2$point_dist_Mangrove))
 d2$river<-as.numeric(cs. (d2$point_dist_river))
 d2$river100<-as.numeric(cs. (d2$point_dist_river100))
 d2$psi<-as.numeric(cs. (d2$patch_shape_index))
 d2$pr_orig<-as.numeric(cs. (d2$pop_risk_dens_orig))#pop_risk_dens_orig  #inhab
 d2$pr_inhab<-as.numeric(cs. (d2$pop_risk_dens_inhab))
+d2$pr_2025<-as.numeric(cs. (d2$pop_risk_2025area))
 d2$fishing_30lag<-as.numeric(cs. (d2$lag_all_30))
 d2$fishing_20lag<-as.numeric(cs. (d2$lag_all_20))
 d2$fishing_10lag<-as.numeric(cs. (d2$lag_all_10))
-d2$fishing10<-as.numeric(cs. (d2$cumulative_all_00))
-d2$fishing20<-as.numeric(cs. (d2$cumulative_all_10))
 d2$blast10<-as.numeric(cs. (d2$cumulative_blast_10))
-d2$poison10<-as.numeric(cs. (d2$cumulative_poison_10))
 d2$pr<-as.numeric(cs. (d2$pop_risk_pop))  # or point_dist_Mangrove or river_distance.nrm or river_distance
 d2$psi2<- -1*d2$psi
 
@@ -424,7 +413,7 @@ plot_model(m_all2, vline.color = "lightgrey")
 # visually inspect residuals ------------------
 # pull  residuals from model -------------------
 r_all2<-residuals(m_all2, type="pearson") # pearson for GLM
-r_all2
+# r_all2
 
 d2_m_all2_r<-cbind(d2,r_all2)
 
@@ -434,11 +423,14 @@ d2_m_all2_r<-cbind(d2,r_all2)
 # ---------------------------------------------
 # plot residuals for m_all2 ------------------------
 d2_m_all2_r%>%
+  filter(abs(r_all2)>3)%>%dplyr::select(point_id)%>%glimpse()
+
+d2_m_all2_r%>%
   filter(abs(r_all2)>4)%>%
   ggplot(aes(x,y,color=r_all2))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
 
 d2_m_all2_r%>%
-  filter(abs(r_all2)>3.5)%>%
+  filter(abs(r_all2)>3)%>%
   ggplot(aes(x,y,color=r_all2))+geom_point()+geom_label(aes(label = point_id), nudge_y=0.2)
 
 
@@ -465,10 +457,10 @@ ranef(m_all2) # group level errors for intercepts and slopes
 visreg(m_all2,"depth","ecological_zone", xlab="Depth",ylab="Reef State")
 visreg(m_all2,"psi2","ecological_zone", xlab="Patch compactness",ylab="Reef State")
 visreg(m_all2,"sg100","ecological_zone", xlab="Seagrass isolation",ylab="Reef State")
-visreg(m_all2,"pr_inhab","ecological_zone", xlab="Population_risk",ylab="Reef State")
+visreg(m_all2,"pr_2025","ecological_zone", xlab="Population_risk",ylab="Reef State")
 visreg(m_all2,"fishing_30lag","ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
 visreg(m_all2,"blast10","ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
-
+visreg(m_all2,"river100","ecological_zone", xlab="River isolation",ylab="Reef State")
 
 # -------------------------------
 # Dredge models and average
@@ -560,11 +552,11 @@ confint(m1_avg, full = TRUE)                # 95% CI for full model average
 # function ----------
 var3<-Reef_state ~ 
   depth+
-  pr_inhab+ 
+  pr_2025+ 
   fishing_30lag+
   blast10+
-  pr_inhab:fishing_30lag+
-  pr_inhab:blast10+
+  pr_2025:fishing_30lag+
+  pr_2025:blast10+
   MPA+
   (1|ecological_zone) 
 
@@ -586,7 +578,7 @@ qqmath(fixef(m_all3))
 
 # visualize aspects of final model, no landscape ------------------------
 visreg(m_all3,"depth","ecological_zone", xlab="Depth",ylab="Reef State")
-visreg(m_all3,"pr_inhab","ecological_zone", xlab="Population_risk",ylab="Reef State")
+visreg(m_all3,"pr_2025","ecological_zone", xlab="Population_risk",ylab="Reef State")
 visreg(m_all3,"fishing_30lag","ecological_zone", xlab="Fishing_legacy_1980_2000",ylab="Reef State")
 visreg(m_all3,"blast10","ecological_zone", xlab="Blast_fishing_2010_2000",ylab="Reef State")
 
